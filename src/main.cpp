@@ -1,22 +1,30 @@
 #include <Arduino.h>
 #include "Beeper.h"
 #include "Bluetooth.h"
+#include "Gyro.h"
+#include "Accelerometer.h"
+#include "SegmentDriver.h"
 
 Bluetooth *BluetoothDriver = nullptr;
 Beeper beeper;
+Gyro gyro;
+Accelerometer accelerometer;
+SegmentDriver segmentDriver;
+
 void setup()
 {
   Serial.begin(9600);
   // BluetoothDriver = new Bluetooth();
-  Serial.println("1- Download and install an BLE scanner app in your phone");
-  Serial.println("2- Scan for BLE devices in the app");
-  Serial.println("3- Connect to MyESP32");
-  Serial.println("4- Go to CUSTOM CHARACTERISTIC in CUSTOM SERVICE and write something");
-  Serial.println("5- See the magic =)");
+  // segmentDriver.Setup();
+  // segmentDriver.SetTime("1234");
+  gyro.Setup();
+  accelerometer.Setup();
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
   beeper.PlaySong();
+  // segmentDriver.TestMultiplex();
+  // segmentDriver.SetTime(std::to_string(rand() % 2400 + 1));
 }
