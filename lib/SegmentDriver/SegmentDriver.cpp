@@ -1,6 +1,6 @@
 #include "SegmentDriver.h"
-#include "CallbackReroute.h"
-#define TAG "Segment Display"
+#include "SegmentDriverCallbackReroute.h"
+const char *SegmentDriver::TAG = "SegmentDriver";
 
 void SegmentDriver::WriteDigit(char digit)
 {
@@ -14,7 +14,7 @@ void SegmentDriver::WriteDigit(char digit)
     {
         digitalWrite(gpio, HIGH);
     }
-    ESP_LOGV(TAG, "Write Digit: %c", digit);
+    ESP32_LOG_V(TAG, string_format("Write Digit: %c", digit));
 }
 
 void SegmentDriver::ClearSegment()
@@ -27,14 +27,14 @@ void SegmentDriver::ClearSegment()
     digitalWrite(SEGMENT_F, LOW);
     digitalWrite(SEGMENT_G, LOW);
     digitalWrite(SEGMENT_DP, LOW);
-    ESP_LOGV(TAG, "Clear Segment", digit);
+    ESP32_LOG_V(TAG, "Clear Segment");
 }
 
 void SegmentDriver::StartTimer()
 {
     esp_timer_create_args_t _timerConfig;
     _timerConfig.arg = reinterpret_cast<void *>(this);
-    _timerConfig.callback = callBackReroute;
+    _timerConfig.callback = segmentDriverCallBackReroute;
     _timerConfig.dispatch_method = ESP_TIMER_TASK;
     _timerConfig.name = "Ticker";
     if (_timer)
@@ -44,7 +44,7 @@ void SegmentDriver::StartTimer()
     }
     esp_timer_create(&_timerConfig, &_timer);
     esp_timer_start_periodic(_timer, 1000 * 1000ULL);
-    ESP_LOGI(TAG, "Timer started");
+    ESP32_LOG_I(TAG, "Timer started");
 }
 
 void SegmentDriver::SetTime(std::string newTimeString)
@@ -53,7 +53,7 @@ void SegmentDriver::SetTime(std::string newTimeString)
         return;
     if (std::all_of(newTimeString.begin(), newTimeString.end(), ::isdigit))
         time = newTimeString;
-    ESP_LOGV(TAG, "timeset: %s", newTimeString);
+    ESP32_LOG_V(TAG, string_format("timeset: %s", newTimeString));
 }
 
 void SegmentDriver::SwitchMultipex()
@@ -62,7 +62,7 @@ void SegmentDriver::SwitchMultipex()
     digitalWrite(GND2, HIGH);
     digitalWrite(GND3, HIGH);
     digitalWrite(GND4, HIGH);
-    ESP_LOGD(TAG, "Multiplex with: %s", segmentCounter);
+    ESP32_LOG_D(TAG, string_format("Multiplex with: %s", segmentCounter));
 
     switch (segmentCounter)
     {
@@ -80,7 +80,7 @@ void SegmentDriver::SwitchMultipex()
         break;
 
     default:
-        ESP_LOGE(TAG, "Multiplexfailed");
+        ESP32_LOG_E(TAG, "Multiplexfailed");
         break;
     }
 }
@@ -90,7 +90,7 @@ void SegmentDriver::OnTimer()
     auto digit = time[segmentCounter];
     WriteDigit(digit);
     SwitchMultipex();
-    ESP_LOGD(TAG, "should show: %s", time);
+    ESP32_LOG_D(TAG, string_format("should show: %s", time));
     segmentCounter++;
     if (segmentCounter > 3)
         segmentCounter = 0;
@@ -98,7 +98,7 @@ void SegmentDriver::OnTimer()
 
 void SegmentDriver::TestMultiplex()
 {
-    ESP_LOGD(TAG, "TestMultiplex started");
+    ESP32_LOG_D(TAG, "TestMultiplex started");
     while (true)
     {
         WriteDigit('8');
@@ -106,16 +106,16 @@ void SegmentDriver::TestMultiplex()
         digitalWrite(GND2, HIGH);
         digitalWrite(GND3, HIGH);
         digitalWrite(GND4, HIGH);
-        ESP_LOGD(TAG, "TestMultiplex 1");
+        ESP32_LOG_D(TAG, "TestMultiplex 1");
         digitalWrite(GND1, LOW);
         delay(1000);
-        ESP_LOGD(TAG, "TestMultiplex 2");
+        ESP32_LOG_D(TAG, "TestMultiplex 2");
         digitalWrite(GND2, LOW);
         delay(1000);
-        ESP_LOGD(TAG, "TestMultiplex 3");
+        ESP32_LOG_D(TAG, "TestMultiplex 3");
         digitalWrite(GND3, LOW);
         delay(1000);
-        ESP_LOGD(TAG, "TestMultiplex 4");
+        ESP32_LOG_D(TAG, "TestMultiplex 4");
         digitalWrite(GND4, LOW);
         delay(1000);
     }
@@ -123,33 +123,33 @@ void SegmentDriver::TestMultiplex()
 
 void SegmentDriver::Setup()
 {
-    ESP_LOGD(TAG, "TrySet: GNDDD");
+    ESP32_LOG_D(TAG, "TrySet: GNDDD");
     pinMode(GNDDD, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: GND1");
+    ESP32_LOG_D(TAG, "TrySet: GND1");
     pinMode(GND1, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: GND2");
+    ESP32_LOG_D(TAG, "TrySet: GND2");
     pinMode(GND2, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: GND3");
+    ESP32_LOG_D(TAG, "TrySet: GND3");
     pinMode(GND3, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: GND4");
+    ESP32_LOG_D(TAG, "TrySet: GND4");
     pinMode(GND4, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_C");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_C");
     pinMode(SEGMENT_C, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_E");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_E");
     pinMode(SEGMENT_E, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_DP");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_DP");
     pinMode(SEGMENT_DP, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_D");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_D");
     pinMode(SEGMENT_D, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_A");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_A");
     pinMode(SEGMENT_A, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_F");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_F");
     pinMode(SEGMENT_F, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_DD");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_DD");
     pinMode(SEGMENT_DD, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_G");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_G");
     pinMode(SEGMENT_G, OUTPUT);
-    ESP_LOGD(TAG, "TrySet: SEGMENT_B");
+    ESP32_LOG_D(TAG, "TrySet: SEGMENT_B");
     pinMode(SEGMENT_B, OUTPUT);
 
     digitalWrite(GNDDD, LOW);

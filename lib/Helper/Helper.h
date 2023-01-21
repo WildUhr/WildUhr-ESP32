@@ -1,52 +1,27 @@
+#ifndef HELPER_H
+#define HELPER_H
+
 #include <string>
 #include <vector>
+#include <memory>
+#include <string>
+#include <stdexcept>
+#include "EspLogger.h"
 
-std::vector<std::string> *splitstr(std::string str, std::string deli = "")
+std::vector<std::string> *splitstr(std::string str, std::string deli = "");
+
+template <typename... Args>
+inline std::string string_format(const std::string &format, Args... args)
 {
-    std::vector<std::string> *splitVec = new std::vector<std::string>();
-    int start = 0;
-    int end = str.find(deli);
-    while (end != -1)
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
+    if (size_s <= 0)
     {
-        splitVec->push_back(str.substr(start, end - start));
-        start = end + deli.size();
-        end = str.find(deli, start);
+        throw std::runtime_error("Error during formatting.");
     }
-    splitVec->push_back(str.substr(start, end - start));
-
-    return splitVec;
+    auto size = static_cast<size_t>(size_s);
+    std::unique_ptr<char[]> buf(new char[size]);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
 }
 
-void logI2CError(const char *TAG, int error)
-{
-    switch (error)
-    {
-    case 1:
-        ESP_LOGE(TAG, "Error 1");
-        ESP_LOGD(TAG, "busy timeout upon entering endTransmission()");
-        break;
-    case 2:
-        ESP_LOGE(TAG, "Error 2");
-        ESP_LOGD(TAG, "START bit generation timeout");
-        break;
-    case 3:
-        ESP_LOGE(TAG, "Error 3");
-        ESP_LOGD(TAG, "end of address transmission timeout");
-        break;
-    case 4:
-        ESP_LOGE(TAG, "Error 4");
-        ESP_LOGD(TAG, "data byte transfer timeout");
-        break;
-    case 5:
-        ESP_LOGE(TAG, "Error 5");
-        ESP_LOGD(TAG, "data byte transfer succeeded, busy timeout immediately after");
-        break;
-    case 6:
-        ESP_LOGE(TAG, "Error 6");
-        ESP_LOGD(TAG, "timeout waiting for peripheral to clear stop bit");
-        break;
-    default:
-        ESP_LOGE(TAG, "Unknown error");
-        break;
-    }
-}
+#endif

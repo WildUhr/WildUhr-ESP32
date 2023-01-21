@@ -1,16 +1,16 @@
 #include "Gyro.h"
-#define TAG "Gyro"
+const char *Gyro::TAG = "Gyro";
 
 int Gyro::TestConnection()
 {
     byte error;
 
     int nDevices;
-    ESP_LOGE(TAG, "Scanning Gyro at address: %x", ADDRESS);
+    ESP32_LOG_I(TAG, string_format("Scanning Gyro at address: %x", GYRO_ADDRESS));
 
     nDevices = 0;
 
-    Wire.beginTransmission(ADDRESS);
+    Wire.beginTransmission(GYRO_ADDRESS);
     error = Wire.endTransmission();
     return error;
 }
@@ -23,8 +23,8 @@ void Gyro::Setup()
 
     if (error != 0)
     {
-        logI2CError(TAG, error);
+        ESP32_LOG_I2C(TAG, error);
         return;
     }
-    ESP_LOGE(TAG, "I2C found");
+    ESP32_LOG_I(TAG, "I2C found");
 }

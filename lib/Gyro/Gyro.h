@@ -4,11 +4,16 @@
 #include <Wire.h>
 #include <string>
 #include "Helper.h"
+#include "EspLogger.h"
+#include "EspLoggerHelper.h"
 
-#define ADDRESS 0x6A
+#define GYRO_ADDRESS 0x6A
 
 class Gyro
 {
+public:
+    static const char *TAG;
+
 private:
     int TestConnection();
 

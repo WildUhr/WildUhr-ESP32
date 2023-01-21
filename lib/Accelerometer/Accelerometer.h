@@ -4,11 +4,16 @@
 #include <Wire.h>
 #include "esp_app_trace.h"
 #include "Helper.h"
+#include "EspLogger.h"
+#include "EspLoggerHelper.h"
 
-#define ADDRESS 0x68
+#define ACCELEROMETER_ADDRESS 0x68
 
 class Accelerometer
 {
+public:
+    static const char *TAG;
+
 private:
     int TestConnection();
 

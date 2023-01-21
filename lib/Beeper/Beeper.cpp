@@ -1,4 +1,6 @@
 #include "Beeper.h"
+const char *Beeper::TAG = "Beeper";
+
 void Beeper::Tone(byte pin, int freq)
 {
   ledcSetup(0, 2000, 8);  // setup beeper

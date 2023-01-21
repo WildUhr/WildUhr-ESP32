@@ -1,15 +1,15 @@
 #include "Accelerometer.h"
-#define TAG "Accelerometer"
+const char *Accelerometer::TAG = "Accelerometer";
 
 int Accelerometer::TestConnection()
 {
     byte error;
 
     int nDevices;
-    ESP_LOGE(TAG, "Scanning Gyro at address: %x", ADDRESS);
+    ESP32_LOG_I(TAG, string_format("Scanning Accelerometer at address: %x", ACCELEROMETER_ADDRESS));
     nDevices = 0;
 
-    Wire.beginTransmission(ADDRESS);
+    Wire.beginTransmission(ACCELEROMETER_ADDRESS);
     error = Wire.endTransmission();
     return error;
 }
@@ -22,8 +22,8 @@ void Accelerometer::Setup()
 
     if (error != 0)
     {
-        logI2CError(TAG, error);
+        ESP32_LOG_I2C(TAG, error);
         return;
     }
-    ESP_LOGE(TAG, "Tiltsensor found");
+    ESP32_LOG_I(TAG, "Accelerometer found");
 }

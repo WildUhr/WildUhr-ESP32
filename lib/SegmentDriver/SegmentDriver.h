@@ -1,13 +1,13 @@
 //        +--------\/--------+
 //        |    |‾‾‾｜‾‾‾|    |             ___A___
-//  GND1  |1*  ·‾‾‾  ‾‾‾    8|  A         ｜      ｜
-//     D  |2   |‾‾‾｜‾‾‾|   9|  F        F｜      ｜B
-//    DP  |3   ·‾‾‾  ‾‾‾   10|  GND2      ｜      ｜     ·
-//     E  |4     ·    ·    11|  DD         ⎯⎯⎯G⎯⎯⎯⎯        DD
-//  GND3  |5   |‾‾‾｜‾‾‾|  12|  G         ｜      ｜     ·
-//     C  |6   ·‾‾‾  ‾‾‾   13|  GND4     E｜      ｜C
-// GNDDD  |7   |‾‾‾｜‾‾‾|  14|  B         ｜      ｜
-//        |    ·‾‾‾  ‾‾‾     |             ‾‾‾D‾‾‾‾ ˙ DP
+//  GND1  |1*  ·‾‾‾  ‾‾‾   17|  B         ｜      ｜
+//  GND2  |2   |‾‾‾｜‾‾‾|  16|  G        F｜      ｜B
+//     D  |3   ·‾‾‾  ‾‾‾   15|  A         ｜      ｜     ·
+//  GNDD  |4     ·    ·    14|  C          ⎯⎯⎯G⎯⎯⎯⎯        DD
+//     E  |5   |‾‾‾｜‾‾‾|  13|  -         ｜      ｜     ·
+//  GND3  |6   ·‾‾‾  ‾‾‾·  11|  F        E｜      ｜C
+//    DP  |7   |‾‾‾｜‾‾‾|  10|  -         ｜      ｜
+//  GND4  |8   ·‾‾‾  ‾‾‾   9 |  ?          ‾‾‾D‾‾‾‾ ˙ DP
 //        +--------=--------+
 #ifndef SEGMENTDRIVER_H
 #define SEGMENTDRIVER_H
@@ -16,6 +16,8 @@
 #include <map>
 #include <vector>
 #include <Arduino.h>
+#include "EspLogger.h"
+#include "Helper.h"
 extern "C"
 {
 #include "esp_timer.h"
@@ -37,6 +39,9 @@ extern "C"
 
 class SegmentDriver
 {
+public:
+    static const char *TAG;
+
 private:
     const std::map<char, std::vector<short>> digitMap = {
         {'0', {SEGMENT_A, SEGMENT_B, SEGMENT_C, SEGMENT_D, SEGMENT_E, SEGMENT_F}},
