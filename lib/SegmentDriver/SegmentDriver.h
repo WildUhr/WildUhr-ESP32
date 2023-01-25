@@ -22,20 +22,20 @@ extern "C"
 {
 #include "esp_timer.h"
 }
-#define GNDDD 17
-#define GND1 16
-#define GND2 32
-#define GND3 33
-#define GND4 25
-#define SEGMENT_C 26
-#define SEGMENT_E 27
-#define SEGMENT_DP 14
-#define SEGMENT_D 12
-#define SEGMENT_A 22
-#define SEGMENT_F 23
-#define SEGMENT_DD 19
-#define SEGMENT_G 18
-#define SEGMENT_B 5
+#define GNDDD GPIO_NUM_10
+#define GND1 GPIO_NUM_2
+#define GND2 GPIO_NUM_1
+#define GND3 GPIO_NUM_3
+#define GND4 GPIO_NUM_0
+#define SEGMENT_C GPIO_NUM_9
+#define SEGMENT_E GPIO_NUM_7
+#define SEGMENT_D GPIO_NUM_8
+#define SEGMENT_A GPIO_NUM_19
+#define SEGMENT_B GPIO_NUM_18
+#define SEGMENT_F GPIO_NUM_6
+#define SEGMENT_DD1 SEGMENT_A
+#define SEGMENT_DD2 SEGMENT_B
+#define SEGMENT_G GPIO_NUM_5
 
 class SegmentDriver
 {
@@ -70,6 +70,7 @@ private:
 
 public:
     void TestMultiplex();
+    void TestDigit();
     SegmentDriver(/* args */) : _timer(nullptr) {}
 
     ~SegmentDriver()

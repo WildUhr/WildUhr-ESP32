@@ -3,7 +3,7 @@
 #include "Arduino.h"
 #include "EspLogger.h"
 
-#define TILT_PIN GPIO_NUM_32
+#define TILT_PIN GPIO_NUM_19
 
 class Tiltsensor
 {

@@ -4,9 +4,13 @@ const char *SegmentDriver::TAG = "SegmentDriver";
 
 void SegmentDriver::WriteDigit(char digit)
 {
+    ESP32_LOG_V(TAG, string_format("Write Digit: %c", digit));
     auto gpios = digitMap.find(digit);
-    if (gpios != digitMap.end())
+    if (gpios == digitMap.end())
+    {
+        ESP32_LOG_E(TAG, string_format("Digit not found: %c", digit));
         return;
+    }
 
     ClearSegment();
 
@@ -14,11 +18,11 @@ void SegmentDriver::WriteDigit(char digit)
     {
         digitalWrite(gpio, HIGH);
     }
-    ESP32_LOG_V(TAG, string_format("Write Digit: %c", digit));
 }
 
 void SegmentDriver::ClearSegment()
 {
+    ESP32_LOG_V(TAG, "Clear Segment");
     digitalWrite(SEGMENT_A, LOW);
     digitalWrite(SEGMENT_B, LOW);
     digitalWrite(SEGMENT_C, LOW);
@@ -26,8 +30,6 @@ void SegmentDriver::ClearSegment()
     digitalWrite(SEGMENT_E, LOW);
     digitalWrite(SEGMENT_F, LOW);
     digitalWrite(SEGMENT_G, LOW);
-    digitalWrite(SEGMENT_DP, LOW);
-    ESP32_LOG_V(TAG, "Clear Segment");
 }
 
 void SegmentDriver::StartTimer()
@@ -96,6 +98,37 @@ void SegmentDriver::OnTimer()
         segmentCounter = 0;
 }
 
+void SegmentDriver::TestDigit()
+{
+    ESP32_LOG_D(TAG, "TestDigit started");
+    while (true)
+    {
+        digitalWrite(SEGMENT_C, LOW);
+        digitalWrite(SEGMENT_E, LOW);
+        digitalWrite(SEGMENT_D, LOW);
+        digitalWrite(SEGMENT_A, LOW);
+        digitalWrite(SEGMENT_B, LOW);
+        digitalWrite(SEGMENT_F, LOW);
+        digitalWrite(SEGMENT_G, LOW);
+        delay(1000);
+
+        digitalWrite(SEGMENT_C, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_E, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_D, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_A, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_B, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_F, HIGH);
+        delay(1000);
+        digitalWrite(SEGMENT_G, HIGH);
+        delay(1000);
+    }
+}
+
 void SegmentDriver::TestMultiplex()
 {
     ESP32_LOG_D(TAG, "TestMultiplex started");
@@ -137,26 +170,21 @@ void SegmentDriver::Setup()
     pinMode(SEGMENT_C, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_E");
     pinMode(SEGMENT_E, OUTPUT);
-    ESP32_LOG_D(TAG, "TrySet: SEGMENT_DP");
-    pinMode(SEGMENT_DP, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_D");
     pinMode(SEGMENT_D, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_A");
     pinMode(SEGMENT_A, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_F");
     pinMode(SEGMENT_F, OUTPUT);
-    ESP32_LOG_D(TAG, "TrySet: SEGMENT_DD");
-    pinMode(SEGMENT_DD, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_G");
     pinMode(SEGMENT_G, OUTPUT);
     ESP32_LOG_D(TAG, "TrySet: SEGMENT_B");
     pinMode(SEGMENT_B, OUTPUT);
 
-    digitalWrite(GNDDD, LOW);
+    digitalWrite(GNDDD, HIGH);
     digitalWrite(GND1, HIGH);
     digitalWrite(GND2, HIGH);
     digitalWrite(GND3, HIGH);
     digitalWrite(GND4, HIGH);
-    digitalWrite(SEGMENT_DD, HIGH);
-    StartTimer();
+    // StartTimer();
 }
