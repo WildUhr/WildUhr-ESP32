@@ -1,4 +1,4 @@
-21735251130535685
+21745318499318388
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -91000,6 +91000,20 @@ HDR-TH_2P-P2.54-V-M
 2
 2
 easyeda2kicad
+HDR-TH_4P-P2.54-V-M
+
+
+0
+4
+4
+easyeda2kicad
+KEY-TH_4P-L7.1-W12.9-P4.50-LS2.5
+
+
+0
+4
+4
+easyeda2kicad
 LED-SEG-TH_SLR0394DBA5BD
 
 
@@ -91007,9 +91021,37 @@ LED-SEG-TH_SLR0394DBA5BD
 12
 12
 easyeda2kicad
+SENSOR-TH_SW-520DS-AB12G
+
+
+0
+2
+2
+easyeda2kicad
 SOIC-16_L9.9-W3.9-P1.27-LS6.0-BL
 
 
 0
 16
 16
+easyeda2kicad
+SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR
+
+
+0
+3
+3
+easyeda2kicad
+SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR-CW
+
+
+0
+3
+3
+easyeda2kicad
+SW-TH_4P-L6.0-W6.0-P4.50-LS6.5
+
+
+0
+4
+4
