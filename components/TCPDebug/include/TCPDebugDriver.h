@@ -26,16 +26,16 @@
 #define WIFI_FAIL_BIT      BIT1
 
 static void event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data);
+    int32_t event_id, void* event_data);
 
 enum LogLevel
 {
-    TRACE= 0,
+    TRACE = 0,
     DEBUG,
     INFO,
     WARN,
     ERROR,
-    CRITICAL, 
+    CRITICAL,
     NONE,
 };
 
@@ -56,16 +56,16 @@ private:
     void InitWifi_dep();
     void DeinitWifi_dep();
     void DeinitTCP();
-    void GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, const JsonObject *json);
+    void GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, const JsonObject* json);
     void SendLogLevel(enum LogLevel LogLevel);
     void SendMsg(const std::string msg);
-    void SendJson(const JsonObject *json);
+    void SendJson(const JsonObject* json);
     void SendPackageLength(ushort length);
 
 public:
     TCPDebugDriver()
     {
-    
+
     }
     ~TCPDebugDriver()
     {
@@ -73,12 +73,12 @@ public:
         DeinitWifi();
     }
 
-    void LogTracing(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
-    void LogDebug(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
-    void LogInfo(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
-    void LogWarning(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
-    void LogError(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
-    void LogCritical(const std::string msg, const SourceInfo sourceInfo, const JsonObject *json = nullptr);
+    void LogTracing(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
+    void LogDebug(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
+    void LogInfo(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
+    void LogWarning(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
+    void LogError(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
+    void LogCritical(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json = nullptr);
     void Init();
     void Connect();
     void Reconnect();

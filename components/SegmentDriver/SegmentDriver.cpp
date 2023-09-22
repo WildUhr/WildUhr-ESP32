@@ -1,13 +1,13 @@
 #include "SegmentDriver.h"
 #include "TCPDebug.h"
 
-void CycleDigitsCallback(void *arg)
+void CycleDigitsCallback(void* arg)
 {
-    SegmentDriver *driver = (SegmentDriver *)arg;
+    SegmentDriver* driver = (SegmentDriver*)arg;
     driver->NextDigit();
 }
 
-void SegmentDriver::UpdateTime(DisplayTime *time)
+void SegmentDriver::UpdateTime(DisplayTime* time)
 {
     if (time == NULL || time->hour < 0 || time->hour > 23 || time->minute < 0 || time->minute > 59)
         throw "Invalid time";
@@ -114,10 +114,10 @@ void SegmentDriver::InitTimer()
     esp_timer_init();
     esp_timer_create_args_t cycleDigitsTimerArgs = {
         .callback = &CycleDigitsCallback,
-        .arg = (void *)this,
+        .arg = (void*)this,
         .dispatch_method = ESP_TIMER_TASK,
         .name = "CycleDigits",
-        .skip_unhandled_events = true};
+        .skip_unhandled_events = true };
     esp_timer_create(&cycleDigitsTimerArgs, &cycleDigitsTimerHandle);
 
     esp_timer_start_periodic(cycleDigitsTimerHandle, 10);

@@ -17,7 +17,7 @@
 class SegmentDriver
 {
 private:
-    DisplayTime time = {0, 0};
+    DisplayTime time = { 0, 0 };
     esp_timer_handle_t cycleDigitsTimerHandle;
 
     int digitCount = 0;
@@ -32,10 +32,10 @@ private:
     int GetDigitBitmask(int digit);
 
 public:
-    SegmentDriver(/* args */){};
-    ~SegmentDriver(){};
+    SegmentDriver(/* args */) {};
+    ~SegmentDriver() {};
     void Init();
-    void UpdateTime(DisplayTime *time);
+    void UpdateTime(DisplayTime* time);
     void NextDigit();
 };
 
