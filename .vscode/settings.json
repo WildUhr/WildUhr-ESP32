@@ -61,6 +61,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "xstring": "cpp",
+        "format": "cpp"
     }
 }

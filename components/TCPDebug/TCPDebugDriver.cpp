@@ -43,7 +43,7 @@ void TCPDebugDriver::InitTCP()
     try
     {
         struct sockaddr_in tcpServerAddr;
-        tcpServerAddr.sin_addr.s_addr = inet_addr("192.168.178.32");
+        tcpServerAddr.sin_addr.s_addr = inet_addr("192.168.178.95");
         tcpServerAddr.sin_family = AF_INET;
         tcpServerAddr.sin_port = htons(13000);
 
@@ -68,13 +68,15 @@ void TCPDebugDriver::DeinitTCP()
     close(_sock);
 }
 
-void TCPDebugDriver::GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     if (!_isConnected)
         this->Init();
     SendLogLevel(LogLevel);
-    SendMsg(msg);
+    SendMsg(msg, sourceInfo);
     SendJson(json);
+
+    free(json);
 }
 
 void TCPDebugDriver::SendLogLevel(enum LogLevel LogLevel)
@@ -85,8 +87,13 @@ void TCPDebugDriver::SendLogLevel(enum LogLevel LogLevel)
     free(buffer);
 }
 
-void TCPDebugDriver::SendMsg(const std::string msg)
+void TCPDebugDriver::SendMsg(const std::string msg, const SourceInfo sourceInfo)
 {
+    char buf[5];
+// Convert 123 to string [buf]
+
+
+    msg += std::format("\n{}: {} {}", sourceInfo.file, sourceInfo.line, sourceInfo.func);
     char* buffer = (char*)malloc(msg.length() + 1);
     strcpy(buffer, msg.c_str());
     SendPackageLength(strlen(buffer));
@@ -94,7 +101,7 @@ void TCPDebugDriver::SendMsg(const std::string msg)
     free(buffer);
 }
 
-void TCPDebugDriver::SendJson(const JsonObject* json)
+void TCPDebugDriver::SendJson(JsonObject* json)
 {
     if (!json) {
         SendPackageLength(0);
@@ -231,32 +238,32 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void TCPDebugDriver::LogTracing(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogTracing(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::TRACE, msg, sourceInfo, json);
 }
 
-void TCPDebugDriver::LogDebug(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogDebug(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::DEBUG, msg, sourceInfo, json);
 }
 
-void TCPDebugDriver::LogInfo(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogInfo(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::INFO, msg, sourceInfo, json);
 }
 
-void TCPDebugDriver::LogWarning(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogWarning(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::WARN, msg, sourceInfo, json);
 }
 
-void TCPDebugDriver::LogError(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogError(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::ERROR, msg, sourceInfo, json);
 }
 
-void TCPDebugDriver::LogCritical(const std::string msg, const SourceInfo sourceInfo, const JsonObject* json)
+void TCPDebugDriver::LogCritical(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::CRITICAL, msg, sourceInfo, json);
 }

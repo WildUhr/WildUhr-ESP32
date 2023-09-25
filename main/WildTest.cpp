@@ -5,29 +5,17 @@
 
 void entrypoint()
 {
-    // SegmentDriver driver;
-    // driver.Init();
-    // DisplayTime time = {0, 0};
-    // driver.UpdateTime(&time);
-    // while (true)
-    //{
-    //     DisplayTime randomTime = {rand() % 24, rand() % 60};
-    //     LOG_DEBUG("Updating time", nullptr);
-    //     driver.UpdateTime(&randomTime);
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // }
+    LOG_DEBUG("goodDay", nullptr);
+
+    SegmentDriver driver;
+    driver.Init();
+    DisplayTime time = {0, 0};
+    driver.UpdateTime(&time);
     while (true)
     {
+        DisplayTime randomTime = {rand() % 24, rand() % 60};
+        driver.UpdateTime(&randomTime);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        LOG_ERROR("Error", nullptr);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        LOG_WARN("Warn", nullptr);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        LOG_INFO("Info", nullptr);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        LOG_DEBUG("Debug", nullptr);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        LOG_TRACE("Trace", nullptr);
     }
 }
 
