@@ -23,7 +23,7 @@ void SegmentDriver::UpdateTime(DisplayTime* time)
     }
 
     this->time = *time;
-    LOG_TRACE("Time updated:", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
+    LOG_INFO("Time updated:", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
 }
 
 void SegmentDriver::Init()
@@ -181,6 +181,7 @@ void SegmentDriver::InitGpio()
     CHECK_ERROR(gpio_config(&io_conf));
 
     CHECK_ERROR(gpio_set_level(RCLK, 0));
+    LOG_INFO("GPIO initiolized", nullptr);
 }
 
 void SegmentDriver::Blink(){
@@ -189,9 +190,11 @@ void SegmentDriver::Blink(){
 
 void SegmentDriver::ToggleBlink(){
     showPoints = false;
-    if(esp_timer_is_active(blinkTimerHandle)){
+    bool isRunning = !esp_timer_is_active(blinkTimerHandle);
+    LOG_INFO("Blinking started", dynamic_cast<JsonObject*>(new PrimitiveJSON(&isRunning)));
+    if(isRunning != true){
         CHECK_ERROR(esp_timer_stop(blinkTimerHandle));
         return;
     } 
-    CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 500000));
+    CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 250000));
 }
