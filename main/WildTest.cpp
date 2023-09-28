@@ -6,7 +6,11 @@
 void entrypoint()
 {
     LOG_DEBUG("goodDay", nullptr);
-
+    while (LOG_IS_INITED == false)
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+    
     SegmentDriver driver;
     driver.Init();
     DisplayTime time = {0, 0};

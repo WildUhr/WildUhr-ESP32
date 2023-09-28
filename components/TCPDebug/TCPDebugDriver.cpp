@@ -1,49 +1,12 @@
 #include "TCPDebugDriver.h"
 
-void TCPDebugDriver::InitNVS_dep()
-{
-    esp_err_t error = nvs_flash_init();
-    if (error == ESP_ERR_NVS_NO_FREE_PAGES || error == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        error = nvs_flash_erase();
-
-        error = nvs_flash_init();
-    }
-}
-
-void TCPDebugDriver::InitWifi_dep()
-{
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_err_t error = ESP_OK;
-    try
-    {
-        /* code */
-        error = esp_wifi_init(&cfg);
-    }
-    catch (const std::exception& e)
-    {
-    }
-
-
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = "FRITZ!Box 7530 PS",
-            .password = "06346084740791889371"
-        }
-    };
-    error = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    error = esp_wifi_set_mode(WIFI_MODE_STA);
-    error = esp_wifi_start();
-    error = esp_wifi_connect();
-}
 
 void TCPDebugDriver::InitTCP()
 {
     try
     {
         struct sockaddr_in tcpServerAddr;
-        tcpServerAddr.sin_addr.s_addr = inet_addr("192.168.178.95");
+        tcpServerAddr.sin_addr.s_addr = inet_addr("192.168.178.32");
         tcpServerAddr.sin_family = AF_INET;
         tcpServerAddr.sin_port = htons(13000);
 
@@ -58,11 +21,6 @@ void TCPDebugDriver::InitTCP()
     }
 }
 
-void TCPDebugDriver::DeinitWifi_dep()
-{
-    esp_wifi_stop();
-}
-
 void TCPDebugDriver::DeinitTCP()
 {
     close(_sock);
@@ -70,12 +28,15 @@ void TCPDebugDriver::DeinitTCP()
 
 void TCPDebugDriver::GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
-    if (!_isConnected)
+    if (!_isConnected){
+        ESP_LOGW("LOGGER", "not Connected");
         this->Init();
+
+    }
     SendLogLevel(LogLevel);
     SendMsg(msg, sourceInfo);
     SendJson(json);
-
+    ESP_LOGW("LOGGER", "%s", msg.c_str());
     free(json);
 }
 
@@ -83,17 +44,20 @@ void TCPDebugDriver::SendLogLevel(enum LogLevel LogLevel)
 {
     char* buffer = (char*)malloc(1);
     buffer[0] = LogLevel;
-    send(_sock, buffer, 1, 0);
+    if(send(_sock, buffer, 1, 0) < 0)
+        ESP_LOGW("LOGGER", "send failed with %d", errno);
     free(buffer);
 }
 
-void TCPDebugDriver::SendMsg(const std::string msg, const SourceInfo sourceInfo)
+void TCPDebugDriver::SendMsg(std::string msg, const SourceInfo sourceInfo)
 {
-    char buf[5];
-// Convert 123 to string [buf]
+    msg.append("\n");
+    msg.append(sourceInfo.file);
+    msg.append(": ");
+    msg.append(std::to_string(sourceInfo.line));
+    msg.append(" ");
+    msg.append(sourceInfo.func);
 
-
-    msg += std::format("\n{}: {} {}", sourceInfo.file, sourceInfo.line, sourceInfo.func);
     char* buffer = (char*)malloc(msg.length() + 1);
     strcpy(buffer, msg.c_str());
     SendPackageLength(strlen(buffer));
@@ -212,15 +176,16 @@ void TCPDebugDriver::FinishConnect(ip_event_got_ip_t* event_data)
 {
     s_retry_num = 0;
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    _isConnected = true;
+
 }
 
 void TCPDebugDriver::Init()
 {
-    this->InitNVS();
+    InitNVS();
 
-    this->InitWifi();
+    InitWifi();
     InitTCP();
-    _isConnected = true;
 
 }
 
@@ -266,4 +231,9 @@ void TCPDebugDriver::LogError(const std::string msg, const SourceInfo sourceInfo
 void TCPDebugDriver::LogCritical(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::CRITICAL, msg, sourceInfo, json);
+}
+
+bool TCPDebugDriver::IsInited()
+{
+    return _isConnected;
 }

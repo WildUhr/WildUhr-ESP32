@@ -1,6 +1,7 @@
 #include "SegmentDriver.h"
 #include "TCPDebug.h"
 #include "JSONHelper/TimeJSON.h"
+#include "JSONHelper/PrimitiveJSON.h"
 
 void CycleDigitsCallback(void* arg)
 {
@@ -16,7 +17,7 @@ void SegmentDriver::UpdateTime(DisplayTime* time)
     }
 
     this->time = *time;
-    LOG_DEBUG("Time updated:", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
+    LOG_TRACE("Time updated:", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
 }
 
 void SegmentDriver::Init()
@@ -27,12 +28,17 @@ void SegmentDriver::Init()
 
 void SegmentDriver::FillRegister()
 {
-    for (size_t i = 0; i < 8; i++)
+    auto digit = GetDigitBitmask(GetCurrentDigitFromTime());
+    for (size_t i = 0; i < 7; i++)
     {
-        CHECK_ERROR(gpio_set_level(SER, (GetCurrentDigitFromTime() >> i) & 1));
+        
+        CHECK_ERROR(gpio_set_level(SER, ~(digit >> i) & 1));
         CHECK_ERROR(gpio_set_level(SRCLK, 1));
         CHECK_ERROR(gpio_set_level(SRCLK, 0));
     }
+        CHECK_ERROR(gpio_set_level(SER, digitCount % 2 == 0));
+        CHECK_ERROR(gpio_set_level(SRCLK, 1));
+        CHECK_ERROR(gpio_set_level(SRCLK, 0));
 }
 
 void SegmentDriver::FlashSegments()
@@ -58,27 +64,27 @@ int SegmentDriver::GetDigitBitmask(int digit)
     switch (digit)
     {
     case 0:
-        return 0b11111100;
+        return DIGIT_0;
     case 1:
-        return 0b01100000;
+        return DIGIT_1;
     case 2:
-        return 0b11011010;
+        return DIGIT_2;
     case 3:
-        return 0b11110010;
+        return DIGIT_3;
     case 4:
-        return 0b01100110;
+        return DIGIT_4;
     case 5:
-        return 0b10110110;
+        return DIGIT_5;
     case 6:
-        return 0b10111110;
+        return DIGIT_6;
     case 7:
-        return 0b11100000;
+        return DIGIT_7;
     case 8:
-        return 0b11111110;
+        return DIGIT_8;
     case 9:
-        return 0b11110110;
+        return DIGIT_9;
     default:
-        return 0;
+        return DIGIT_UNKNOWN;
     }
 }
 
@@ -106,17 +112,22 @@ void SegmentDriver::NextDigit()
         digitCount = 0;
     }
 
-    CHECK_ERROR(gpio_set_level(CA1, digitCount == 0));
-    CHECK_ERROR(gpio_set_level(CA2, digitCount == 1));
-    CHECK_ERROR(gpio_set_level(CA3, digitCount == 2));
-    CHECK_ERROR(gpio_set_level(CA4, digitCount == 3));
-
+    CHECK_ERROR(gpio_set_level(CA1, true));
+    CHECK_ERROR(gpio_set_level(CA2, true));
+    CHECK_ERROR(gpio_set_level(CA3, true));
+    CHECK_ERROR(gpio_set_level(CA4, true));
+    ClearSegments();
+    FillRegister();
+    FlashSegments();
+    CHECK_ERROR(gpio_set_level(CA1, digitCount != 0));
+    CHECK_ERROR(gpio_set_level(CA2, digitCount != 1));
+    CHECK_ERROR(gpio_set_level(CA3, digitCount != 2));
+    CHECK_ERROR(gpio_set_level(CA4, digitCount != 3));
     digitCount++;
 }
 
 void SegmentDriver::InitTimer()
 {
-    CHECK_ERROR(esp_timer_init());
     esp_timer_create_args_t cycleDigitsTimerArgs = {
         .callback = &CycleDigitsCallback,
         .arg = (void*)this,
@@ -125,7 +136,8 @@ void SegmentDriver::InitTimer()
         .skip_unhandled_events = true };
     CHECK_ERROR(esp_timer_create(&cycleDigitsTimerArgs, &cycleDigitsTimerHandle));
 
-    CHECK_ERROR(esp_timer_start_periodic(cycleDigitsTimerHandle, 10));
+    CHECK_ERROR(esp_timer_start_periodic(cycleDigitsTimerHandle, 5));
+    LOG_INFO("Timer started", nullptr);
 }
 
 void SegmentDriver::InitGpio()

@@ -12,7 +12,7 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_event.h"
-
+#include "esp_log.h"
 #define EXAMPLE_ESP_WIFI_SSID      "FRITZ!Box 7530 PS"
 #define EXAMPLE_ESP_WIFI_PASS      "06346084740791889371"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  5
@@ -50,11 +50,8 @@ private:
 private:
     void InitNVS();
     void InitTCP();
-    void InitNVS_dep();
     void InitWifi();
     void DeinitWifi();
-    void InitWifi_dep();
-    void DeinitWifi_dep();
     void DeinitTCP();
     void GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, JsonObject* json);
     void SendLogLevel(enum LogLevel LogLevel);
@@ -83,6 +80,7 @@ public:
     void Connect();
     void Reconnect();
     void FinishConnect(ip_event_got_ip_t* event_data);
+    bool IsInited();
 };
 
 #endif

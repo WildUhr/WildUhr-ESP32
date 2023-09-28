@@ -13,7 +13,29 @@
 #define CA2 GPIO_NUM_5
 #define CA3 GPIO_NUM_7
 #define CA4 GPIO_NUM_8
-
+//      
+//          8
+//       -------
+//    3 |       | 7
+//      |   2   |
+//       -------
+//    4 |       | 6
+//      |       |    1
+//       -------   .
+//          5
+//      
+#define DIGIT_0 0b00111111
+#define DIGIT_1 0b00000110
+#define DIGIT_2 0b01011011
+#define DIGIT_3 0b01001111
+#define DIGIT_4 0b01100110
+#define DIGIT_5 0b01101101
+#define DIGIT_6 0b01111101
+#define DIGIT_7 0b00000111
+#define DIGIT_8 0b01111111
+#define DIGIT_9 0b01101111
+//                      12345678
+#define DIGIT_UNKNOWN 0b00111111
 class SegmentDriver
 {
 private:
@@ -21,7 +43,7 @@ private:
     esp_timer_handle_t cycleDigitsTimerHandle;
 
     int digitCount = 0;
-
+    int testDigit = -1;
 private:
     void InitTimer();
     void InitGpio();
