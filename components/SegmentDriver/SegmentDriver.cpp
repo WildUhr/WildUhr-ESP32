@@ -9,6 +9,12 @@ void CycleDigitsCallback(void* arg)
     driver->NextDigit();
 }
 
+void BlinkCallback(void* arg)
+{
+    SegmentDriver* driver = (SegmentDriver*)arg;
+    driver->Blink();
+}
+
 void SegmentDriver::UpdateTime(DisplayTime* time)
 {
     if (time == NULL || time->hour < 0 || time->hour > 23 || time->minute < 0 || time->minute > 59)
@@ -36,9 +42,17 @@ void SegmentDriver::FillRegister()
         CHECK_ERROR(gpio_set_level(SRCLK, 1));
         CHECK_ERROR(gpio_set_level(SRCLK, 0));
     }
-        CHECK_ERROR(gpio_set_level(SER, digitCount % 2 == 0));
-        CHECK_ERROR(gpio_set_level(SRCLK, 1));
-        CHECK_ERROR(gpio_set_level(SRCLK, 0));
+    if (digitCount % 2 != 0)
+    {
+        CHECK_ERROR(gpio_set_level(SER, showPoints));
+    }   
+    else
+    {
+        CHECK_ERROR(gpio_set_level(SER, 1));
+    }
+    
+    CHECK_ERROR(gpio_set_level(SRCLK, 1));
+    CHECK_ERROR(gpio_set_level(SRCLK, 0));
 }
 
 void SegmentDriver::FlashSegments()
@@ -137,7 +151,16 @@ void SegmentDriver::InitTimer()
     CHECK_ERROR(esp_timer_create(&cycleDigitsTimerArgs, &cycleDigitsTimerHandle));
 
     CHECK_ERROR(esp_timer_start_periodic(cycleDigitsTimerHandle, 5));
-    LOG_INFO("Timer started", nullptr);
+
+    esp_timer_create_args_t blinkTimerArgs = {
+        .callback = &BlinkCallback,
+        .arg = (void*)this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "Blink",
+        .skip_unhandled_events = true };
+    CHECK_ERROR(esp_timer_create(&blinkTimerArgs, &blinkTimerHandle));
+
+    LOG_INFO("Timers started", nullptr);
 }
 
 void SegmentDriver::InitGpio()
@@ -158,4 +181,17 @@ void SegmentDriver::InitGpio()
     CHECK_ERROR(gpio_config(&io_conf));
 
     CHECK_ERROR(gpio_set_level(RCLK, 0));
+}
+
+void SegmentDriver::Blink(){
+    showPoints = !showPoints;
+}
+
+void SegmentDriver::ToggleBlink(){
+    showPoints = false;
+    if(esp_timer_is_active(blinkTimerHandle)){
+        CHECK_ERROR(esp_timer_stop(blinkTimerHandle));
+        return;
+    } 
+    CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 500000));
 }

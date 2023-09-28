@@ -41,9 +41,12 @@ class SegmentDriver
 private:
     DisplayTime time = { 0, 0 };
     esp_timer_handle_t cycleDigitsTimerHandle;
+    esp_timer_handle_t blinkTimerHandle;
 
     int digitCount = 0;
     int testDigit = -1;
+    bool showPoints = false;
+public:
 private:
     void InitTimer();
     void InitGpio();
@@ -59,6 +62,8 @@ public:
     void Init();
     void UpdateTime(DisplayTime* time);
     void NextDigit();
+    void Blink();
+    void ToggleBlink();
 };
 
 #endif

@@ -15,11 +15,19 @@ void entrypoint()
     driver.Init();
     DisplayTime time = {0, 0};
     driver.UpdateTime(&time);
+    int counter = 0;
     while (true)
     {
         DisplayTime randomTime = {rand() % 24, rand() % 60};
         driver.UpdateTime(&randomTime);
+        if(counter == 15)
+        {
+            driver.ToggleBlink();
+            counter = 0;
+        }
+        counter++;
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+
     }
 }
 
