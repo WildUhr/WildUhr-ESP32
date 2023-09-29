@@ -1,3 +1,3 @@
 idf_component_register(SRCS "WildTest.cpp"
                     INCLUDE_DIRS "."
-                    REQUIRES SegmentDriver)
+                    REQUIRES SegmentDriver ButtonControl driver TCPDebug)

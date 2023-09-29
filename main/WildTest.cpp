@@ -1,8 +1,35 @@
 #include <stdio.h>
 #include "SegmentDriver.h"
+#include "ButtonControl.h"
 #include "TcpDebug.h"
 #include "sdkconfig.h"
 
+void UpButtonHandler(void* arg)
+{
+    SegmentDriver* driver = (SegmentDriver*)arg;
+    DisplayTime randomTime = {rand() % 24, rand() % 60};
+    driver->UpdateTime(&randomTime);
+
+}
+
+void DownButtonHandler(void* arg)
+{
+    SegmentDriver* driver = (SegmentDriver*)arg;
+    DisplayTime randomTime = {rand() % 24, rand() % 60};
+    driver->UpdateTime(&randomTime);
+
+}
+
+void ActionButtonHandler(void* arg)
+{
+    SegmentDriver* driver = (SegmentDriver*)arg;
+    driver->ToggleBlink();
+}
+
+void LoadDump()
+{
+    // https://github.com/espressif/esp-idf/blob/master/components/espcoredump/include/esp_core_dump.h}
+}
 void entrypoint()
 {
     LOG_DEBUG("goodDay", nullptr);
@@ -10,24 +37,20 @@ void entrypoint()
     {
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
+
+    //LoadDump();
     
     SegmentDriver driver;
+    ButtonControl buttonControl;
     driver.Init();
-    DisplayTime time = {0, 0};
-    driver.UpdateTime(&time);
-    int counter = 0;
+    buttonControl.Init();
+
+    buttonControl.AddNewHandler(ButtonControl::Button::UP, UpButtonHandler, &driver);
+    buttonControl.AddNewHandler(ButtonControl::Button::DOWN, DownButtonHandler, &driver);
+    buttonControl.AddNewHandler(ButtonControl::Button::ACTION, ActionButtonHandler, &driver);
     while (true)
     {
-        DisplayTime randomTime = {rand() % 24, rand() % 60};
-        driver.UpdateTime(&randomTime);
-        if(counter == 15)
-        {
-            driver.ToggleBlink();
-            counter = 0;
-        }
-        counter++;
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-
     }
 }
 
