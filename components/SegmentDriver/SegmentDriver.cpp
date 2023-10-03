@@ -197,4 +197,9 @@ void SegmentDriver::ToggleBlink(){
         return;
     } 
     CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 250000));
+
+}
+
+bool SegmentDriver::IsInPanicMode(){
+    return panic;
 }

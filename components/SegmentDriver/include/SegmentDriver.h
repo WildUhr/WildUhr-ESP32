@@ -46,6 +46,7 @@ private:
     int digitCount = 0;
     int testDigit = -1;
     bool showPoints = false;
+    bool panic = false;
 public:
 private:
     void InitTimer();
@@ -64,6 +65,7 @@ public:
     void NextDigit();
     void Blink();
     void ToggleBlink();
+    bool IsInPanicMode();
 };
 
 #endif
