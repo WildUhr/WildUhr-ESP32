@@ -48,7 +48,7 @@ void Kernel::ShutdownLogic()
 
 void Kernel::BootingLogic()
 {
-    state = State::MENU;
+    state = State::READY;
     LOG_INFO("STARTING BOOT", nullptr);
     while (!LOG_IS_INITED)
     {
@@ -71,21 +71,20 @@ void Kernel::ReadyLogic()
 {
     LOG_TRACE("ReadyLogic", nullptr);
     
+    ButtonMap bMap = buttonControl.GetButtonMap();
+    while (!(bMap.up && bMap.down && bMap.action)){bMap = buttonControl.GetButtonMap();}
     
-
-    //ButtonMap bMap = buttonControl.GetButtonMap()
-    //while (!(bMap.up && bMap.down && bMap.action)){}
-    //
-    //for (size_t i = 10; i < count; i++)
-    //{
-    //    if(!(bMap.up && bMap.down && bMap.action))
-    //    {
-    //        state = State::ARMED;
-    //        return;
-    //    }
-    //    vTaskDelay(100 / portTICK_PERIOD_MS); //propably wait with xQueueReceive ticks
-    //}
-    //state = State::MENU;    
+    for (size_t i = 0; i < 20; i++)
+    {
+        bMap = buttonControl.GetButtonMap();
+        if(!(bMap.up && bMap.down && bMap.action))
+        {
+            state = State::ARMED;
+            return;
+        }
+        vTaskDelay(100 / portTICK_PERIOD_MS); //propably wait with xQueueReceive ticks
+    }
+    state = State::MENU;    
 }
 
 void Kernel::ArmedLogic()
