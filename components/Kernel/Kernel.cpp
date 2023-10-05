@@ -55,24 +55,42 @@ void Kernel::BootingLogic()
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     segmentDriver.Init();
-    if(segmentDriver.IsInPanicMode()){
-        state = State::PANIC;
-    }
-
     buttonControl.Init();
-    if(buttonControl.IsInPanicMode()){
+    realTimeClock.Init();
+
+    if (segmentDriver.IsInPanicMode() || buttonControl.IsInPanicMode() || realTimeClock.IsInPanicMode())
+    {
         state = State::PANIC;
-    }   
-        
+        return;
+    }
+    time_t time = realTimeClock.GetTime();
+    DisplayTime dTime = {
+        .hour = (int)((time / 3600) % 24),
+        .minute = (int)((time / 60) % 60),    
+    };
+    segmentDriver.UpdateTime(&dTime);
     LOG_INFO("BOOT FINISHED", nullptr);
+    LOG_TRACE("Ready", nullptr);
+
 }
 
 void Kernel::ReadyLogic()
-{
-    LOG_TRACE("ReadyLogic", nullptr);
-    
+{    
     ButtonMap bMap = buttonControl.GetButtonMap();
-    while (!(bMap.up && bMap.down && bMap.action)){bMap = buttonControl.GetButtonMap();}
+    ButtonControl::Button button = ButtonControl::Button::NONE;
+    time_t time = 0;
+    DisplayTime dTime = {
+        .hour = 0,
+        .minute = 0,
+    };
+    while (!(bMap.up && bMap.down && bMap.action)){
+        button = buttonControl.TryPop();
+        bMap = buttonControl.GetButtonMap();
+        time = realTimeClock.GetTime();
+        dTime.hour = (int)((time / 3600) % 24);
+        dTime.minute = (int)((time / 60) % 60);
+        segmentDriver.UpdateTime(&dTime);
+    }
     
     for (size_t i = 0; i < 20; i++)
     {
@@ -80,43 +98,82 @@ void Kernel::ReadyLogic()
         if(!(bMap.up && bMap.down && bMap.action))
         {
             state = State::ARMED;
+            LOG_TRACE("ArmedLogic", nullptr);
             return;
         }
         vTaskDelay(100 / portTICK_PERIOD_MS); //propably wait with xQueueReceive ticks
     }
     state = State::MENU;    
+    while (!(!bMap.up && !bMap.down && !bMap.action)){
+        button = buttonControl.TryPop();
+        bMap = buttonControl.GetButtonMap();
+        time = realTimeClock.GetTime();
+        dTime.hour = (int)((time / 3600) % 24);
+        dTime.minute = (int)((time / 60) % 60);
+        segmentDriver.UpdateTime(&dTime);
+    }
+    LOG_TRACE("MenuLogic", nullptr);
 }
 
 void Kernel::ArmedLogic()
 {
-    LOG_TRACE("ArmedLogic", nullptr);
 }
 
 void Kernel::RecordingLogic()
 {
-    LOG_TRACE("RecordingLogic", nullptr);
 }
 
 void Kernel::WaitingLogic()
 {
-    LOG_TRACE("WaitingLogic", nullptr);
 }
 
 void Kernel::MenuLogic()
 {
-    LOG_TRACE("MenuLogic", nullptr);
-    ButtonControl::Button button = buttonControl.TryPop();
     ButtonMap bMap = buttonControl.GetButtonMap();
+    time_t time = 0;
+    ButtonControl::Button button = ButtonControl::Button::NONE;
+    DisplayTime dTime = {
+        .hour = 0,
+        .minute = 0,
+    };
+    while (!bMap.up && !bMap.down && !bMap.action){
+        button = buttonControl.TryPop();
+        bMap = buttonControl.GetButtonMap();
+        time = realTimeClock.GetTime();
+        dTime.hour = (int)((time / 3600) % 24);
+        dTime.minute = (int)((time / 60) % 60);
+        segmentDriver.UpdateTime(&dTime);
+    }
+
+    button = buttonControl.TryPop();
+    time = realTimeClock.GetTime();
     switch (button)
     {
     case ButtonControl::Button::UP:
         LOG_DEBUG("UP", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.up)));
+        time += 60;
+        realTimeClock.SetTime(time);
+
+        dTime.hour = (int)((time / 3600) % 24);
+        dTime.minute = (int)((time / 60) % 60);
+
+        segmentDriver.UpdateTime(&dTime);
         break;
     case ButtonControl::Button::DOWN:
         LOG_DEBUG("DOWN", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.down)));
+        time -= 60;
+        realTimeClock.SetTime(time);
+
+        dTime.hour = (int)((time / 3600) % 24);
+        dTime.minute = (int)((time / 60) % 60);
+
+        segmentDriver.UpdateTime(&dTime);
         break;
     case ButtonControl::Button::ACTION:
         LOG_DEBUG("ACTION", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.action)));
+        state = State::READY;
+        break;
+    case ButtonControl::Button::NONE:
         break;
     default:
         break;

@@ -21,7 +21,11 @@ void SegmentDriver::UpdateTime(DisplayTime* time)
     {
         LOG_ERROR("INVALIDE_TIME", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
     }
-
+    if (time->hour == this->time.hour && time->minute == this->time.minute)
+    {
+        return;
+    }
+    
     this->time = *time;
     LOG_INFO("Time updated:", dynamic_cast<JsonObject*>(new TimeJSON(*time)));
 }

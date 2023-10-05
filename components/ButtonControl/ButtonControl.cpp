@@ -14,7 +14,6 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
         buttonState[gpio_num] = !buttonState[gpio_num];
     }
     deboundeTimer[gpio_num] = xTaskGetTickCount();
-
 }
 
 ButtonControl::Button ButtonControl::TryPop(uint32_t waitTime)

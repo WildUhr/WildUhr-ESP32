@@ -4,6 +4,8 @@
 #include "JSONHelper/PrimitiveJSON.h"
 #include "SegmentDriver.h"
 #include "ButtonControl.h"
+#include "RealTimeClock.h"
+#include "DisplayTime.h"
 
 class Kernel
 {
@@ -24,7 +26,8 @@ private:
     State state = State::SHUTDOWN;
     SegmentDriver segmentDriver;
     ButtonControl buttonControl;
-    
+    RealTimeClock realTimeClock;
+
 private:
     void ShutdownLogic();
     void BootingLogic();
