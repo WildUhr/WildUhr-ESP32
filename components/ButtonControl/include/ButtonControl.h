@@ -39,6 +39,7 @@ public:
     bool IsInPanicMode();
     ButtonMap GetButtonMap();
     void ClearQueue();
+    void HardReset();
 };
 
 #endif

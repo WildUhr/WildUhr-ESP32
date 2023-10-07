@@ -55,6 +55,14 @@ bool ButtonControl::IsInPanicMode(){
     return panic;
 }
 
+void ButtonControl::HardReset(){
+    for (size_t i = 0; i < 3; i++)
+    {
+        buttonState[i] = 0;
+    }
+    ClearQueue();
+}
+
 ButtonMap ButtonControl::GetButtonMap(){
     ButtonMap map;
     map.up = buttonState[0];

@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <string>
 #include "JsonObject.h"
+#include "JSONHelper/CoreDumpJSON.h"
+#include "JSONHelper/ErrorJSON.h"
 #include "SourceInfo.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
@@ -13,6 +15,8 @@
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_core_dump.h"
+
 #define EXAMPLE_ESP_WIFI_SSID      "FRITZ!Box 7530 PS"
 #define EXAMPLE_ESP_WIFI_PASS      "06346084740791889371"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  5
@@ -58,7 +62,7 @@ private:
     void SendMsg(const std::string msg, const SourceInfo sourceInfo);
     void SendJson(JsonObject* json);
     void SendPackageLength(ushort length);
-
+    void ReadCoreDump();
 public:
     TCPDebugDriver()
     {
