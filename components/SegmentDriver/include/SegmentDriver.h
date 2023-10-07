@@ -35,7 +35,7 @@
 #define DIGIT_8 0b01111111
 #define DIGIT_9 0b01101111
 //                      12345678
-#define DIGIT_UNKNOWN 0b00111111
+#define DIGIT_UNKNOWN 0b01000000
 class SegmentDriver
 {
 private:
@@ -46,6 +46,7 @@ private:
     int digitCount = 0;
     int testDigit = -1;
     bool showPoints = false;
+    bool showDash = false;
     bool panic = false;
 public:
 private:
@@ -65,7 +66,9 @@ public:
     void NextDigit();
     void Blink();
     void ToggleBlink();
+    void ToggleDash();
     bool IsInPanicMode();
+    void TurnOff();
 };
 
 #endif

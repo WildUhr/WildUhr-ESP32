@@ -98,12 +98,22 @@ void Kernel::ReadyLogic()
         if(!(bMap.up && bMap.down && bMap.action))
         {
             state = State::ARMED;
+            segmentDriver.ToggleDash();
+            while (!(!bMap.up && !bMap.down && !bMap.action)){
+                button = buttonControl.TryPop();
+                bMap = buttonControl.GetButtonMap();
+                time = realTimeClock.GetTime();
+                dTime.hour = (int)((time / 3600) % 24);
+                dTime.minute = (int)((time / 60) % 60);
+                segmentDriver.UpdateTime(&dTime);
+            }
             LOG_TRACE("ArmedLogic", nullptr);
             return;
         }
-        vTaskDelay(100 / portTICK_PERIOD_MS); //propably wait with xQueueReceive ticks
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    state = State::MENU;    
+    state = State::MENU; 
+    segmentDriver.ToggleBlink();   
     while (!(!bMap.up && !bMap.down && !bMap.action)){
         button = buttonControl.TryPop();
         bMap = buttonControl.GetButtonMap();
@@ -117,6 +127,19 @@ void Kernel::ReadyLogic()
 
 void Kernel::ArmedLogic()
 {
+    auto button = buttonControl.TryPop(60000);
+    segmentDriver.ToggleDash();
+
+    if(button == ButtonControl::Button::NONE)
+    {
+        state = State::RECORDING;
+        segmentDriver.TurnOff();
+        LOG_TRACE("RECORDING", nullptr);
+        return;
+    }
+    
+    LOG_TRACE("ReadyLogic", nullptr);
+    state = State::READY;    
 }
 
 void Kernel::RecordingLogic()
@@ -172,6 +195,7 @@ void Kernel::MenuLogic()
     case ButtonControl::Button::ACTION:
         LOG_DEBUG("ACTION", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.action)));
         state = State::READY;
+        segmentDriver.ToggleBlink();
         break;
     case ButtonControl::Button::NONE:
         break;

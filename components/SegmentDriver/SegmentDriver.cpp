@@ -39,6 +39,11 @@ void SegmentDriver::Init()
 void SegmentDriver::FillRegister()
 {
     auto digit = GetDigitBitmask(GetCurrentDigitFromTime());
+
+    if (showDash){
+        digit = DIGIT_UNKNOWN;
+    }
+
     for (size_t i = 0; i < 7; i++)
     {
         
@@ -192,6 +197,10 @@ void SegmentDriver::Blink(){
     showPoints = !showPoints;
 }
 
+void SegmentDriver::ToggleDash(){
+    showDash = !showDash;
+}
+
 void SegmentDriver::ToggleBlink(){
     showPoints = false;
     bool isRunning = !esp_timer_is_active(blinkTimerHandle);
@@ -201,7 +210,16 @@ void SegmentDriver::ToggleBlink(){
         return;
     } 
     CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 250000));
+}
 
+void SegmentDriver::TurnOff(){
+    ClearSegments();
+    CHECK_ERROR(esp_timer_stop(cycleDigitsTimerHandle));
+    CHECK_ERROR(esp_timer_stop(blinkTimerHandle));
+    CHECK_ERROR(gpio_set_level(CA1, true));
+    CHECK_ERROR(gpio_set_level(CA2, true));
+    CHECK_ERROR(gpio_set_level(CA3, true));
+    CHECK_ERROR(gpio_set_level(CA4, true));
 }
 
 bool SegmentDriver::IsInPanicMode(){
