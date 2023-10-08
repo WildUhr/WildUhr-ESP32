@@ -34,7 +34,7 @@ void TCPDebugDriver::GenericLog(enum LogLevel LogLevel, const std::string msg, c
     SendLogLevel(LogLevel);
     SendMsg(msg, sourceInfo);
     SendJson(json);
-    ESP_LOGW("LOGGER", "%s", msg.c_str());
+    ESP_LOGW("LOGGER", "LOG: %s %s %s %s", msg.c_str(), sourceInfo.file, sourceInfo.func, std::to_string(sourceInfo.line).c_str());
     free(json);
 }
 
@@ -229,24 +229,6 @@ void TCPDebugDriver::LogError(const std::string msg, const SourceInfo sourceInfo
 void TCPDebugDriver::LogCritical(const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     GenericLog(LogLevel::CRITICAL, msg, sourceInfo, json);
-}
-
-void TCPDebugDriver::ReadCoreDump()
-{
-    esp_core_dump_summary_t *summary = (esp_core_dump_summary_t *)malloc(sizeof(esp_core_dump_summary_t));
-    if (summary) {
-        auto error = esp_core_dump_get_summary(summary);
-        if (error == ESP_OK) {
-            LogCritical("Core dump", SourceInfo(__FILE__, __LINE__, __FUNCTION__), dynamic_cast<JsonObject*>(new CoreDumpJSON(*summary)));
-        }
-        else{
-        LogCritical("Core dump not found", SourceInfo(__FILE__, __LINE__, __FUNCTION__), dynamic_cast<JsonObject*>(new ErrorJSON(error)));
-        }
-    }
-    else{
-            LogCritical("Core dump not found", SourceInfo(__FILE__, __LINE__, __FUNCTION__));
-    }
-    free(summary);
 }
 
 bool TCPDebugDriver::IsInited()

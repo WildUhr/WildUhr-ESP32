@@ -65,7 +65,11 @@ void Kernel::BootingLogic()
         state = State::PANIC;
         return;
     }
-    time = realTimeClock.GetTime();
+    DisplayTime dTime = {
+        .hour = 0,
+        .minute = 0,
+    };
+    auto time = realTimeClock.GetTime();
     dTime.hour = (int)((time / 3600) % 24);
     dTime.minute = (int)((time / 60) % 60);
     segmentDriver.UpdateTime(&dTime);
@@ -128,14 +132,13 @@ void Kernel::ArmedLogic()
 {  
     LOG_TRACE("Armed", nullptr);
 
-    auto button = buttonControl.TryPop(60000);
+    auto button = buttonControl.TryPop(12000);
     segmentDriver.ToggleDash();
     LOG_TRACE("ARMED5", nullptr);
 
     if(button == ButtonControl::Button::NONE)
     {
         state = State::RECORDING;
-        segmentDriver.TurnOff();
         LOG_TRACE("RECORDING", nullptr);
         return;
     }
@@ -147,6 +150,7 @@ void Kernel::ArmedLogic()
 
 void Kernel::RecordingLogic()
 {
+    segmentDriver.ReadyForSleep();
     sleepControl.EnterInactiveMode();
     LOG_INFO("Woke up from sleep", nullptr);
     buttonControl.HardReset();

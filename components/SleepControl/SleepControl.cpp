@@ -10,7 +10,8 @@ void SleepControl::EnterInactiveMode()
 {
     LOG_INFO("Entering sleep mode", nullptr);
 
-    gpio_deep_sleep_wakeup_enable(WAKE_UP_GPIO, GPIO_INTR_HIGH_LEVEL);
+    CHECK_ERROR(gpio_deep_sleep_wakeup_enable(WAKE_UP_GPIO, GPIO_INTR_HIGH_LEVEL));
+    LOG_INFO("Sleep GPIO Init", nullptr);
     esp_deep_sleep_start();
 }
 

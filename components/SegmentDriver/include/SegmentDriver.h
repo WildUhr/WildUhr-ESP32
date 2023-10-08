@@ -68,7 +68,7 @@ public:
     void ToggleBlink();
     void ToggleDash();
     bool IsInPanicMode();
-    void TurnOff();
+    void ReadyForSleep();
 };
 
 #endif

@@ -212,8 +212,8 @@ void SegmentDriver::ToggleBlink(){
     CHECK_ERROR(esp_timer_start_periodic(blinkTimerHandle, 250000));
 }
 
-void SegmentDriver::TurnOff(){
-    LOG_DEBUG("Turning off segment", nullptr);
+void SegmentDriver::ReadyForSleep(){
+    LOG_DEBUG("ReadySegmentForSleep", nullptr);
     ClearSegments();
     CHECK_ERROR(esp_timer_stop(cycleDigitsTimerHandle));
     CHECK_ERROR(esp_timer_stop(blinkTimerHandle));
@@ -221,6 +221,11 @@ void SegmentDriver::TurnOff(){
     CHECK_ERROR(gpio_set_level(CA2, true));
     CHECK_ERROR(gpio_set_level(CA3, true));
     CHECK_ERROR(gpio_set_level(CA4, true));
+    CHECK_ERROR(gpio_hold_en(CA1));
+    CHECK_ERROR(gpio_hold_en(CA2));
+    CHECK_ERROR(gpio_hold_en(CA3));
+    CHECK_ERROR(gpio_hold_en(CA4));
+    gpio_deep_sleep_hold_en();
 }
 
 bool SegmentDriver::IsInPanicMode(){

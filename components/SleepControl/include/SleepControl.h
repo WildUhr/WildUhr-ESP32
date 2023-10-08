@@ -7,7 +7,7 @@
 #include "JSONHelper/PrimitiveJSON.h"
 #include "esp_sleep.h"
 
-#define WAKE_UP_GPIO             GPIO_NUM_0
+#define WAKE_UP_GPIO             GPIO_NUM_3
 
 
 class SleepControl
