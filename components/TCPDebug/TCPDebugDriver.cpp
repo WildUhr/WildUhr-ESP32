@@ -29,9 +29,7 @@ void TCPDebugDriver::DeinitTCP()
 void TCPDebugDriver::GenericLog(enum LogLevel LogLevel, const std::string msg, const SourceInfo sourceInfo, JsonObject* json)
 {
     if (!_isConnected){
-        ESP_LOGW("LOGGER", "not Connected");
         this->Init();
-
     }
     SendLogLevel(LogLevel);
     SendMsg(msg, sourceInfo);
@@ -186,7 +184,7 @@ void TCPDebugDriver::Init()
 
     InitWifi();
     InitTCP();
-
+    ESP_LOGW("LOGGER", "TCP Done");
 }
 
 static void event_handler(void* arg, esp_event_base_t event_base,

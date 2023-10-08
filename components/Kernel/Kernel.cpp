@@ -49,6 +49,7 @@ void Kernel::ShutdownLogic()
 void Kernel::BootingLogic()
 {
     state = State::READY;
+    
     LOG_INFO("STARTING BOOT", nullptr);
     while (!LOG_IS_INITED)
     {
@@ -57,8 +58,9 @@ void Kernel::BootingLogic()
     segmentDriver.Init();
     buttonControl.Init();
     realTimeClock.Init();
+    sleepControl.Init();
 
-    if (segmentDriver.IsInPanicMode() || buttonControl.IsInPanicMode() || realTimeClock.IsInPanicMode())
+    if (segmentDriver.IsInPanicMode() || buttonControl.IsInPanicMode() || realTimeClock.IsInPanicMode() || sleepControl.IsInPanicMode())
     {
         state = State::PANIC;
         return;
@@ -107,7 +109,6 @@ void Kernel::ReadyLogic()
                 dTime.minute = (int)((time / 60) % 60);
                 segmentDriver.UpdateTime(&dTime);
             }
-            LOG_TRACE("ArmedLogic", nullptr);
             return;
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -126,7 +127,9 @@ void Kernel::ReadyLogic()
 }
 
 void Kernel::ArmedLogic()
-{
+{  
+    LOG_TRACE("Armed", nullptr);
+
     auto button = buttonControl.TryPop(60000);
     segmentDriver.ToggleDash();
 
@@ -144,10 +147,25 @@ void Kernel::ArmedLogic()
 
 void Kernel::RecordingLogic()
 {
+    sleepControl.EnterInactiveMode();
+    LOG_INFO("Woke up from sleep", nullptr);
+    buttonControl.HardReset();
+    auto time = realTimeClock.GetTime();
+    recordedTime.hour = (int)((time / 3600) % 24);
+    recordedTime.minute = (int)((time / 60) % 60);
+    segmentDriver.UpdateTime(&recordedTime);
+    state = State::WAITING;
 }
 
 void Kernel::WaitingLogic()
 {
+    ButtonMap bMap = buttonControl.GetButtonMap();
+    ButtonControl::Button button = ButtonControl::Button::NONE;
+    while (!(bMap.up && bMap.down && bMap.action)){
+        button = buttonControl.TryPop();
+        bMap = buttonControl.GetButtonMap();
+    }
+    state = State::READY;
 }
 
 void Kernel::MenuLogic()
@@ -221,9 +239,17 @@ void Kernel::PanicLogic()
     {
         LOG_CRITICAL("ButtonControl is in panic", nullptr);
     }
-    
-    LOG_CRITICAL("Application is in panic mode but all Components work, how???????????????????", nullptr);
 
+    if (realTimeClock.IsInPanicMode())
+    {
+        LOG_CRITICAL("RealTimeClock is in panic", nullptr);
+    }
+
+    if (sleepControl.IsInPanicMode())
+    {
+        LOG_CRITICAL("SleepControl is in panic", nullptr);
+    }
+    
     vTaskDelay(100 / portTICK_PERIOD_MS);
     
 }

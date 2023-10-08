@@ -213,6 +213,7 @@ void SegmentDriver::ToggleBlink(){
 }
 
 void SegmentDriver::TurnOff(){
+    LOG_DEBUG("Turning off segment", nullptr);
     ClearSegments();
     CHECK_ERROR(esp_timer_stop(cycleDigitsTimerHandle));
     CHECK_ERROR(esp_timer_stop(blinkTimerHandle));

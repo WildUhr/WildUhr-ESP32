@@ -6,7 +6,7 @@
 #include "ButtonControl.h"
 #include "RealTimeClock.h"
 #include "DisplayTime.h"
-
+#include "SleepControl.h"
 class Kernel
 {
 public:
@@ -27,7 +27,8 @@ private:
     SegmentDriver segmentDriver;
     ButtonControl buttonControl;
     RealTimeClock realTimeClock;
-
+    SleepControl sleepControl; 
+    DisplayTime recordedTime = { 0, 0 };
 private:
     void ShutdownLogic();
     void BootingLogic();
