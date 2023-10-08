@@ -2,6 +2,7 @@
 #define JSON_OBJECT_H
 
 #include <string>
+#include "esp_core_dump.h"
 
 class JsonObject
 {

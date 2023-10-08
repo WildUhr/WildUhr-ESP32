@@ -231,6 +231,24 @@ void TCPDebugDriver::LogCritical(const std::string msg, const SourceInfo sourceI
     GenericLog(LogLevel::CRITICAL, msg, sourceInfo, json);
 }
 
+void TCPDebugDriver::ReadCoreDump()
+{
+    esp_core_dump_summary_t *summary = (esp_core_dump_summary_t *)malloc(sizeof(esp_core_dump_summary_t));
+    if (summary) {
+        auto error = esp_core_dump_get_summary(summary);
+        if (error == ESP_OK) {
+            LogCritical("Core dump", SourceInfo(__FILE__, __LINE__, __FUNCTION__), dynamic_cast<JsonObject*>(new CoreDumpJSON(*summary)));
+        }
+        else{
+        LogCritical("Core dump not found", SourceInfo(__FILE__, __LINE__, __FUNCTION__), dynamic_cast<JsonObject*>(new ErrorJSON(error)));
+        }
+    }
+    else{
+            LogCritical("Core dump not found", SourceInfo(__FILE__, __LINE__, __FUNCTION__));
+    }
+    free(summary);
+}
+
 bool TCPDebugDriver::IsInited()
 {
     return _isConnected;

@@ -65,11 +65,9 @@ void Kernel::BootingLogic()
         state = State::PANIC;
         return;
     }
-    time_t time = realTimeClock.GetTime();
-    DisplayTime dTime = {
-        .hour = (int)((time / 3600) % 24),
-        .minute = (int)((time / 60) % 60),    
-    };
+    time = realTimeClock.GetTime();
+    dTime.hour = (int)((time / 3600) % 24);
+    dTime.minute = (int)((time / 60) % 60);
     segmentDriver.UpdateTime(&dTime);
     LOG_INFO("BOOT FINISHED", nullptr);
     LOG_TRACE("Ready", nullptr);
@@ -132,6 +130,7 @@ void Kernel::ArmedLogic()
 
     auto button = buttonControl.TryPop(60000);
     segmentDriver.ToggleDash();
+    LOG_TRACE("ARMED5", nullptr);
 
     if(button == ButtonControl::Button::NONE)
     {
@@ -140,6 +139,7 @@ void Kernel::ArmedLogic()
         LOG_TRACE("RECORDING", nullptr);
         return;
     }
+    LOG_TRACE("ARMED6", nullptr);
     
     LOG_TRACE("ReadyLogic", nullptr);
     state = State::READY;    
