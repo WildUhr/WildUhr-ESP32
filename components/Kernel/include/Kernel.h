@@ -7,11 +7,16 @@
 #include "RealTimeClock.h"
 #include "DisplayTime.h"
 #include "SleepControl.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
 class Kernel
 {
 public:
     enum State
     {
+        UNDEFINED = 0,
         SHUTDOWN,
         BOOTING,
         READY,
@@ -39,6 +44,8 @@ private:
     void MenuLogic();
     void SleepLogic();
     void PanicLogic();
+    void SaveState();
+    State RecoverState();
 public:
     Kernel(/* args */){};
     ~Kernel(){};

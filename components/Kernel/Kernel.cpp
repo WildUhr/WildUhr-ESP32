@@ -48,7 +48,7 @@ void Kernel::ShutdownLogic()
 
 void Kernel::BootingLogic()
 {
-    state = State::READY;
+    state = RecoverState();
     
     LOG_INFO("STARTING BOOT", nullptr);
     while (!LOG_IS_INITED)
@@ -82,7 +82,7 @@ void Kernel::ReadyLogic()
 {    
     ButtonMap bMap = buttonControl.GetButtonMap();
     ButtonControl::Button button = ButtonControl::Button::NONE;
-    time_t time = 0;
+    time_t time = realTimeClock.GetTime();
     DisplayTime dTime = {
         .hour = 0,
         .minute = 0,
@@ -150,6 +150,7 @@ void Kernel::ArmedLogic()
 
 void Kernel::RecordingLogic()
 {
+    SaveState();
     segmentDriver.ReadyForSleep();
     sleepControl.EnterInactiveMode();
     LOG_INFO("Woke up from sleep", nullptr);
@@ -175,7 +176,7 @@ void Kernel::WaitingLogic()
 void Kernel::MenuLogic()
 {
     ButtonMap bMap = buttonControl.GetButtonMap();
-    time_t time = 0;
+    time_t time = realTimeClock.GetTime();
     ButtonControl::Button button = ButtonControl::Button::NONE;
     DisplayTime dTime = {
         .hour = 0,
@@ -256,6 +257,63 @@ void Kernel::PanicLogic()
     
     vTaskDelay(100 / portTICK_PERIOD_MS);
     
+}
+
+void Kernel::SaveState()
+{
+    // Initialize NVS
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    // Handle will automatically close when going out of scope or when it's reset.
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
+        // Read
+    Kernel::State nvsState = state; // value will default to 0, if not set yet in NVS
+    bool nvsFirstRead = true; // value will default to 0, if not set yet in NVS
+    
+    err = handle->set_item("firstRead", nvsFirstRead);
+    err = handle->set_item("state", nvsState);
+    err = handle->commit();
+}
+
+Kernel::State Kernel::RecoverState()
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    // Handle will automatically close when going out of scope or when it's reset.
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
+        // Read
+    Kernel::State nvsState = State::Ready; // value will default to 0, if not set yet in NVS
+    bool nvsFirstRead = false; // value will default to 0, if not set yet in NVS
+    err = handle->get_item("firstRead", nvsFirstRead);
+
+    if (err != ESP_ERR_NVS_NOT_FOUND && nvsFirstRead)
+    {
+        err = handle->get_item("state", nvsState);
+    }
+    err = handle->set_item("firstRead", false);
+    err = handle->commit();
+
+    if (nvsState != State::Ready)
+    {
+        LOG_INFO("Recovered state", dynamic_cast<JsonObject*>(new PrimitiveJSON(&nvsState)));
+    }
+    
+
+    return nvsState;    
 }
 
 Kernel::State Kernel::getState()

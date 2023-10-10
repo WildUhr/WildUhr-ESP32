@@ -3,6 +3,7 @@
 #include "JsonObject.h"
 #include "esp_err.h"
 #include <typeinfo>
+#include <ctime>
 
 class PrimitiveJSON : public JsonObject
 {

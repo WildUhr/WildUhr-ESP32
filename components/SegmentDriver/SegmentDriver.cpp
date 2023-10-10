@@ -188,7 +188,11 @@ void SegmentDriver::InitGpio()
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     CHECK_ERROR(gpio_config(&io_conf));
-
+    CHECK_ERROR(gpio_hold_dis(CA1));
+    CHECK_ERROR(gpio_hold_dis(CA2));
+    CHECK_ERROR(gpio_hold_dis(CA3));
+    CHECK_ERROR(gpio_hold_dis(CA4));
+    gpio_deep_sleep_hold_dis();
     CHECK_ERROR(gpio_set_level(RCLK, 0));
     LOG_INFO("GPIO initiolized", nullptr);
 }

@@ -1,6 +1,8 @@
 #ifndef REAL_TIME_CLOCK_H
 #define REAL_TIME_CLOCK_H
 #include <string>
+#include <ctime>
+#include <sys/time.h>
 #include "TCPDebug.h"
 #include "JSONHelper/PrimitiveJSON.h"
 

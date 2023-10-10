@@ -2,18 +2,13 @@
 #include "RealTimeClock.h"
 #include "rom/rtc.h"
 
-static QueueHandle_t rtc_evt_queue = NULL;
-static void IRAM_ATTR gpio_isr_handler(void* arg)
-{
-    uint32_t time = (uint32_t) arg;
-
-
-}
-
 void RealTimeClock::Init()
 {
     LOG_INFO("RealTimeClock initialized", nullptr);
-    SetTime(1672531200);
+    if (GetTime() <= 0)
+    {
+        SetTime(1672531200);
+    }
 }
 
 bool RealTimeClock::IsInPanicMode(){

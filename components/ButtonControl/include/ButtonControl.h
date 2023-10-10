@@ -4,6 +4,10 @@
 #include "driver/gpio.h"
 #include "TCPDebug.h"
 #include "JSONHelper/PrimitiveJSON.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 
 #define GPIO_DOWN             GPIO_NUM_0
 #define GPIO_UP               GPIO_NUM_1
