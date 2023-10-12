@@ -4,6 +4,14 @@
 static QueueHandle_t gpio_evt_queue = NULL;
 static uint32_t* deboundeTimer = new uint32_t[3]{0,0,0};
 static uint32_t* buttonState = new uint32_t[3]{0,0,0};
+
+
+void CalibrateCallback(void* arg)
+{
+    ButtonControl* driver = (ButtonControl*)arg;
+    driver->Calibrate();
+}
+
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
@@ -25,11 +33,6 @@ ButtonControl::Button ButtonControl::TryPop(uint32_t waitTime)
     return Button::NONE;
 }
 
-void ButtonControl::ClearQueue()
-{
-    xQueueReset(gpio_evt_queue) ;
-}
-
 void ButtonControl::Init()
 {
     gpio_config_t io_conf = {};
@@ -47,7 +50,7 @@ void ButtonControl::Init()
     CHECK_ERROR(gpio_isr_handler_add(GPIO_UP, gpio_isr_handler, (void*)Button::UP));
     CHECK_ERROR(gpio_isr_handler_add(GPIO_DOWN,gpio_isr_handler, (void*)Button::DOWN));
     CHECK_ERROR(gpio_isr_handler_add(GPIO_ACTION, gpio_isr_handler, (void*)Button::ACTION));
-
+    InitTimer();
     LOG_INFO("ButtonControl initialized", nullptr);
 }
 
@@ -55,12 +58,11 @@ bool ButtonControl::IsInPanicMode(){
     return panic;
 }
 
-void ButtonControl::HardReset(){
+void ButtonControl::Calibrate(){
     for (size_t i = 0; i < 3; i++)
     {
-        buttonState[i] = 0;
+        buttonState[i] = !gpio_get_level((gpio_num_t)i);
     }
-    ClearQueue();
 }
 
 ButtonMap ButtonControl::GetButtonMap(){
@@ -69,4 +71,16 @@ ButtonMap ButtonControl::GetButtonMap(){
     map.down = buttonState[1];
     map.action = buttonState[2];
     return map;
+}
+
+void ButtonControl::InitTimer(){
+    esp_timer_create_args_t calibrateTimerArgs = {
+        .callback = &CalibrateCallback,
+        .arg = (void*)this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "Calibrate",
+        .skip_unhandled_events = true };
+    CHECK_ERROR(esp_timer_create(&calibrateTimerArgs, &calibrateTimerHandle));
+
+    CHECK_ERROR(esp_timer_start_periodic(calibrateTimerHandle, 5000000));
 }

@@ -8,6 +8,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "esp_timer.h"
 
 #define GPIO_DOWN             GPIO_NUM_0
 #define GPIO_UP               GPIO_NUM_1
@@ -26,6 +27,7 @@ class ButtonControl
 {
 private:
     bool panic = false;
+    esp_timer_handle_t calibrateTimerHandle;
 public:
     enum Button
     {
@@ -39,11 +41,13 @@ public:
     ~ButtonControl(){};
 
     void Init();
+    void Calibrate();
     Button TryPop(uint32_t waitTime = 0);
     bool IsInPanicMode();
     ButtonMap GetButtonMap();
-    void ClearQueue();
-    void HardReset();
+private:
+    void InitTimer();
+
 };
 
 #endif
