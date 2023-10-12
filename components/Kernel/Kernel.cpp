@@ -74,8 +74,6 @@ void Kernel::BootingLogic()
     dTime.minute = (int)((time / 60) % 60);
     segmentDriver.UpdateTime(&dTime);
     LOG_INFO("BOOT FINISHED", nullptr);
-    LOG_TRACE("Ready", nullptr);
-
 }
 
 void Kernel::ReadyLogic()
@@ -125,52 +123,43 @@ void Kernel::ReadyLogic()
         dTime.minute = (int)((time / 60) % 60);
         segmentDriver.UpdateTime(&dTime);
     }
-    LOG_TRACE("MenuLogic", nullptr);
+    LOG_INFO("MenuLogic", nullptr);
 }
 
 void Kernel::ArmedLogic()
 {  
-    LOG_TRACE("Armed", nullptr);
+    LOG_INFO("Armed", nullptr);
 
     auto button = buttonControl.TryPop(12000);
     segmentDriver.ToggleDash();
-    LOG_TRACE("ARMED5", nullptr);
 
     if(button == ButtonControl::Button::NONE)
     {
         state = State::RECORDING;
-        LOG_TRACE("RECORDING", nullptr);
+        LOG_INFO("RECORDING", nullptr);
         return;
     }
-    LOG_TRACE("ARMED6", nullptr);
-    
-    LOG_TRACE("ReadyLogic", nullptr);
+
+    LOG_INFO("ReadyLogic", nullptr);
     state = State::READY;    
 }
 
 void Kernel::RecordingLogic()
 {
-    SaveState();
+    SaveState(State::WAITING);
     segmentDriver.ReadyForSleep();
     sleepControl.EnterInactiveMode();
-    LOG_INFO("Woke up from sleep", nullptr);
-    buttonControl.HardReset();
-    auto time = realTimeClock.GetTime();
-    recordedTime.hour = (int)((time / 3600) % 24);
-    recordedTime.minute = (int)((time / 60) % 60);
-    segmentDriver.UpdateTime(&recordedTime);
-    state = State::WAITING;
 }
 
 void Kernel::WaitingLogic()
 {
-    ButtonMap bMap = buttonControl.GetButtonMap();
+    LOG_INFO("Waiting...", nullptr);
     ButtonControl::Button button = ButtonControl::Button::NONE;
-    while (!(bMap.up && bMap.down && bMap.action)){
+    while (button == ButtonControl::Button::NONE){
         button = buttonControl.TryPop();
-        bMap = buttonControl.GetButtonMap();
     }
     state = State::READY;
+    LOG_INFO("Ready again", nullptr);
 }
 
 void Kernel::MenuLogic()
@@ -229,7 +218,7 @@ void Kernel::MenuLogic()
 
 void Kernel::SleepLogic()
 {
-    LOG_TRACE("SleepLogic", nullptr);
+    LOG_INFO("SleepLogic", nullptr);
 }
 
 void Kernel::PanicLogic()
@@ -259,31 +248,36 @@ void Kernel::PanicLogic()
     
 }
 
-void Kernel::SaveState()
+void Kernel::SaveState(State saveState)
 {
-    // Initialize NVS
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( err );
-
-    // Handle will automatically close when going out of scope or when it's reset.
-    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
-        // Read
-    Kernel::State nvsState = state; // value will default to 0, if not set yet in NVS
-    bool nvsFirstRead = true; // value will default to 0, if not set yet in NVS
+    auto handle = GetHandler();
     
-    err = handle->set_item("firstRead", nvsFirstRead);
-    err = handle->set_item("state", nvsState);
-    err = handle->commit();
+    CHECK_ERROR(handle->set_item("firstRead", true));
+    CHECK_ERROR(handle->set_item("state", saveState));
+    CHECK_ERROR(handle->commit());
 }
 
 Kernel::State Kernel::RecoverState()
 {
+    auto handle = GetHandler();
+    State nvsState = State::READY; // value will default to 0, if not set yet in NVS
+    bool nvsFirstRead = false; // value will default to 0, if not set yet in NVS
+    esp_err_t err = handle->get_item("firstRead", nvsFirstRead);
+    CHECK_ERROR(err);
+    if (err != ESP_ERR_NVS_NOT_FOUND && nvsFirstRead)
+    {
+        CHECK_ERROR(handle->get_item("state", nvsState));
+        ESP_LOGI("NVS", "Recovered state: %d", nvsState);
+        LOG_INFO("Recovered state", dynamic_cast<JsonObject*>(new PrimitiveJSON(&nvsState)));
+    }
+    CHECK_ERROR(handle->set_item("firstRead", false));
+    CHECK_ERROR(handle->commit());
+
+    return nvsState;    
+}
+
+std::unique_ptr<nvs::NVSHandle> Kernel::GetHandler()
+{
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
@@ -293,27 +287,7 @@ Kernel::State Kernel::RecoverState()
     }
     ESP_ERROR_CHECK( err );
 
-    // Handle will automatically close when going out of scope or when it's reset.
-    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
-        // Read
-    Kernel::State nvsState = State::Ready; // value will default to 0, if not set yet in NVS
-    bool nvsFirstRead = false; // value will default to 0, if not set yet in NVS
-    err = handle->get_item("firstRead", nvsFirstRead);
-
-    if (err != ESP_ERR_NVS_NOT_FOUND && nvsFirstRead)
-    {
-        err = handle->get_item("state", nvsState);
-    }
-    err = handle->set_item("firstRead", false);
-    err = handle->commit();
-
-    if (nvsState != State::Ready)
-    {
-        LOG_INFO("Recovered state", dynamic_cast<JsonObject*>(new PrimitiveJSON(&nvsState)));
-    }
-    
-
-    return nvsState;    
+    return nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
 }
 
 Kernel::State Kernel::getState()

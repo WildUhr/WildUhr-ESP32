@@ -1,5 +1,6 @@
 #ifndef Kernel_H
 #define Kernel_H
+
 #include "TCPDebug.h"
 #include "JSONHelper/PrimitiveJSON.h"
 #include "SegmentDriver.h"
@@ -10,7 +11,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-
+#include <inttypes.h>
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "nvs_handle.hpp"
+#include "esp_system.h"
 class Kernel
 {
 public:
@@ -34,6 +39,7 @@ private:
     RealTimeClock realTimeClock;
     SleepControl sleepControl; 
     DisplayTime recordedTime = { 0, 0 };
+    bool panic = false;
 private:
     void ShutdownLogic();
     void BootingLogic();
@@ -44,8 +50,9 @@ private:
     void MenuLogic();
     void SleepLogic();
     void PanicLogic();
-    void SaveState();
+    void SaveState(State saveState);
     State RecoverState();
+    std::unique_ptr<nvs::NVSHandle> GetHandler();
 public:
     Kernel(/* args */){};
     ~Kernel(){};
