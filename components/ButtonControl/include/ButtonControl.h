@@ -16,13 +16,6 @@
 #define GPIO_INPUT_PIN_SEL    ((1ULL<<GPIO_DOWN) | (1ULL<<GPIO_UP)| (1ULL<<GPIO_ACTION))
 #define ESP_INTR_FLAG_DEFAULT 0
 
-struct ButtonMap
-{
-    bool up;
-    bool down;
-    bool action;
-};
-
 class ButtonControl
 {
 private:
@@ -44,7 +37,10 @@ public:
     void Calibrate();
     Button TryPop(uint32_t waitTime = 0);
     bool IsInPanicMode();
-    ButtonMap GetButtonMap();
+    void ClearQueue();
+    bool AllButtonsReleased();
+    bool AllButtonsPressed();
+    bool IsPressed(Button button);
 private:
     void InitTimer();
 

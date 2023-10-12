@@ -53,6 +53,8 @@ private:
     void SaveState(State saveState);
     State RecoverState();
     std::unique_ptr<nvs::NVSHandle> GetHandler();
+    void UpdateTime();
+    void SatisfyWatchdog();
 public:
     Kernel(/* args */){};
     ~Kernel(){};

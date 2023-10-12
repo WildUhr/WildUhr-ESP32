@@ -5,6 +5,7 @@ void Kernel::entrypoint()
 {
     while (true)
     {
+        buttonControl.ClearQueue();
         switch (state)
         {
         case State::SHUTDOWN:
@@ -65,87 +66,56 @@ void Kernel::BootingLogic()
         state = State::PANIC;
         return;
     }
-    DisplayTime dTime = {
-        .hour = 0,
-        .minute = 0,
-    };
-    auto time = realTimeClock.GetTime();
-    dTime.hour = (int)((time / 3600) % 24);
-    dTime.minute = (int)((time / 60) % 60);
-    segmentDriver.UpdateTime(&dTime);
+
+    UpdateTime();
     LOG_INFO("BOOT FINISHED", nullptr);
 }
 
 void Kernel::ReadyLogic()
 {    
-    ButtonMap bMap = buttonControl.GetButtonMap();
-    ButtonControl::Button button = ButtonControl::Button::NONE;
-    time_t time = realTimeClock.GetTime();
-    DisplayTime dTime = {
-        .hour = 0,
-        .minute = 0,
-    };
-    while (!(bMap.up && bMap.down && bMap.action)){
-        button = buttonControl.TryPop();
-        bMap = buttonControl.GetButtonMap();
-        time = realTimeClock.GetTime();
-        dTime.hour = (int)((time / 3600) % 24);
-        dTime.minute = (int)((time / 60) % 60);
-        segmentDriver.UpdateTime(&dTime);
+    LOG_INFO("ReadyLogic", nullptr);
+
+    while (!buttonControl.AllButtonsPressed()){
+        UpdateTime();
+        SatisfyWatchdog();
     }
-    
-    for (size_t i = 0; i < 20; i++)
+    buttonControl.ClearQueue();
+
+    auto button = buttonControl.TryPop(2000);
+    if (button == ButtonControl::Button::NONE)
     {
-        bMap = buttonControl.GetButtonMap();
-        if(!(bMap.up && bMap.down && bMap.action))
-        {
-            state = State::ARMED;
-            segmentDriver.ToggleDash();
-            while (!(!bMap.up && !bMap.down && !bMap.action)){
-                button = buttonControl.TryPop();
-                bMap = buttonControl.GetButtonMap();
-                time = realTimeClock.GetTime();
-                dTime.hour = (int)((time / 3600) % 24);
-                dTime.minute = (int)((time / 60) % 60);
-                segmentDriver.UpdateTime(&dTime);
-            }
-            return;
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        state = State::MENU; 
+        segmentDriver.ToggleBlink();   
     }
-    state = State::MENU; 
-    segmentDriver.ToggleBlink();   
-    while (!(!bMap.up && !bMap.down && !bMap.action)){
-        button = buttonControl.TryPop();
-        bMap = buttonControl.GetButtonMap();
-        time = realTimeClock.GetTime();
-        dTime.hour = (int)((time / 3600) % 24);
-        dTime.minute = (int)((time / 60) % 60);
-        segmentDriver.UpdateTime(&dTime);
+    else
+    {
+        state = State::ARMED;
+        segmentDriver.ToggleDash();
     }
-    LOG_INFO("MenuLogic", nullptr);
+
+    while (!buttonControl.AllButtonsReleased()){
+        UpdateTime();
+        SatisfyWatchdog();
+    }
 }
 
 void Kernel::ArmedLogic()
 {  
     LOG_INFO("Armed", nullptr);
+    state = State::RECORDING;
 
     auto button = buttonControl.TryPop(12000);
     segmentDriver.ToggleDash();
 
-    if(button == ButtonControl::Button::NONE)
+    if(button != ButtonControl::Button::NONE)
     {
-        state = State::RECORDING;
-        LOG_INFO("RECORDING", nullptr);
-        return;
+        state = State::READY;
     }
-
-    LOG_INFO("ReadyLogic", nullptr);
-    state = State::READY;    
 }
 
 void Kernel::RecordingLogic()
 {
+    LOG_INFO("Recording Logic", nullptr);
     SaveState(State::WAITING);
     segmentDriver.ReadyForSleep();
     sleepControl.EnterInactiveMode();
@@ -159,60 +129,45 @@ void Kernel::WaitingLogic()
         button = buttonControl.TryPop();
     }
     state = State::READY;
-    LOG_INFO("Ready again", nullptr);
 }
 
 void Kernel::MenuLogic()
 {
-    ButtonMap bMap = buttonControl.GetButtonMap();
+    LOG_INFO("Menu Logic", nullptr);
     time_t time = realTimeClock.GetTime();
     ButtonControl::Button button = ButtonControl::Button::NONE;
-    DisplayTime dTime = {
-        .hour = 0,
-        .minute = 0,
-    };
-    while (!bMap.up && !bMap.down && !bMap.action){
-        button = buttonControl.TryPop();
-        bMap = buttonControl.GetButtonMap();
+
+    while (true)
+    {    
         time = realTimeClock.GetTime();
-        dTime.hour = (int)((time / 3600) % 24);
-        dTime.minute = (int)((time / 60) % 60);
-        segmentDriver.UpdateTime(&dTime);
-    }
+        button = buttonControl.TryPop();
+        if (!buttonControl.AllButtonsReleased())
+        {
+            continue;
+        }
+        
+        switch (button)
+        {
+        case ButtonControl::Button::ACTION:
+            LOG_DEBUG("ACTION", nullptr);
+            state = State::READY;
+            segmentDriver.ToggleBlink();
+            return;
+        case ButtonControl::Button::UP:
+            LOG_DEBUG("UP", nullptr);
+            time += 60;
+            break;
+        case ButtonControl::Button::DOWN:
+            LOG_DEBUG("DOWN", nullptr);
+            time -= 60;
+            break;
+        case ButtonControl::Button::NONE:
+        default:
 
-    button = buttonControl.TryPop();
-    time = realTimeClock.GetTime();
-    switch (button)
-    {
-    case ButtonControl::Button::UP:
-        LOG_DEBUG("UP", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.up)));
-        time += 60;
+            break;
+        }
         realTimeClock.SetTime(time);
-
-        dTime.hour = (int)((time / 3600) % 24);
-        dTime.minute = (int)((time / 60) % 60);
-
-        segmentDriver.UpdateTime(&dTime);
-        break;
-    case ButtonControl::Button::DOWN:
-        LOG_DEBUG("DOWN", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.down)));
-        time -= 60;
-        realTimeClock.SetTime(time);
-
-        dTime.hour = (int)((time / 3600) % 24);
-        dTime.minute = (int)((time / 60) % 60);
-
-        segmentDriver.UpdateTime(&dTime);
-        break;
-    case ButtonControl::Button::ACTION:
-        LOG_DEBUG("ACTION", dynamic_cast<JsonObject*>(new PrimitiveJSON(&bMap.action)));
-        state = State::READY;
-        segmentDriver.ToggleBlink();
-        break;
-    case ButtonControl::Button::NONE:
-        break;
-    default:
-        break;
+        UpdateTime();
     }
 }
 
@@ -260,8 +215,8 @@ void Kernel::SaveState(State saveState)
 Kernel::State Kernel::RecoverState()
 {
     auto handle = GetHandler();
-    State nvsState = State::READY; // value will default to 0, if not set yet in NVS
-    bool nvsFirstRead = false; // value will default to 0, if not set yet in NVS
+    State nvsState = State::READY; 
+    bool nvsFirstRead = false; 
     esp_err_t err = handle->get_item("firstRead", nvsFirstRead);
     CHECK_ERROR(err);
     if (err != ESP_ERR_NVS_NOT_FOUND && nvsFirstRead)
@@ -280,8 +235,6 @@ std::unique_ptr<nvs::NVSHandle> Kernel::GetHandler()
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
@@ -295,3 +248,17 @@ Kernel::State Kernel::getState()
     return state;
 }
 
+void Kernel::UpdateTime()
+{
+    auto time = realTimeClock.GetTime();
+    DisplayTime dTime = {
+        .hour = (int)((time / 3600) % 24),
+        .minute = (int)((time / 60) % 60),
+    };
+    segmentDriver.UpdateTime(&dTime);
+}
+
+void Kernel::SatisfyWatchdog()
+{
+    vTaskDelay(1);
+}

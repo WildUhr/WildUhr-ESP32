@@ -65,14 +65,6 @@ void ButtonControl::Calibrate(){
     }
 }
 
-ButtonMap ButtonControl::GetButtonMap(){
-    ButtonMap map;
-    map.up = buttonState[0];
-    map.down = buttonState[1];
-    map.action = buttonState[2];
-    return map;
-}
-
 void ButtonControl::InitTimer(){
     esp_timer_create_args_t calibrateTimerArgs = {
         .callback = &CalibrateCallback,
@@ -83,4 +75,22 @@ void ButtonControl::InitTimer(){
     CHECK_ERROR(esp_timer_create(&calibrateTimerArgs, &calibrateTimerHandle));
 
     CHECK_ERROR(esp_timer_start_periodic(calibrateTimerHandle, 5000000));
+}
+
+void ButtonControl::ClearQueue(){
+    if(gpio_evt_queue != NULL){
+        xQueueReset(gpio_evt_queue);
+    }
+}
+
+bool ButtonControl::AllButtonsReleased(){
+    return buttonState[0] == 0 && buttonState[1] == 0 && buttonState[2] == 0;
+}
+
+bool ButtonControl::AllButtonsPressed(){
+    return buttonState[0] == 1 && buttonState[1] == 1 && buttonState[2] == 1;
+}
+
+bool ButtonControl::IsPressed(Button button){
+    return buttonState[(int)button] == 1;
 }
