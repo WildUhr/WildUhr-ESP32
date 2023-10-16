@@ -7,7 +7,12 @@
 #include "JSONHelper/PrimitiveJSON.h"
 #include "esp_sleep.h"
 
-#define WAKE_UP_GPIO             GPIO_NUM_3
+#define SHAKE_WAKE_UP_GPIO             GPIO_NUM_3
+#define BUTTON1_WAKE_UP_GPIO           GPIO_NUM_0
+#define BUTTON2_WAKE_UP_GPIO           GPIO_NUM_1
+#define BUTTON3_WAKE_UP_GPIO           GPIO_NUM_2
+
+
 
 
 class SleepControl
@@ -21,7 +26,8 @@ public:
     ~SleepControl(){};
 
     void Init();
-    void EnterInactiveMode();
+    void SleepWithShakeWeakup();
+    void SleepWithButtonWeakup();
     bool IsInPanicMode();
 };
 
