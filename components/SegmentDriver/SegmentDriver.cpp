@@ -15,6 +15,12 @@ void BlinkCallback(void* arg)
     driver->Blink();
 }
 
+void BlinkDigitCallback(void* arg)
+{
+    SegmentDriver* driver = (SegmentDriver*)arg;
+    driver->BlinkDigit();
+}
+
 void SegmentDriver::UpdateTime(DisplayTime* time)
 {
     if (time == NULL || time->hour < 0 || time->hour > 23 || time->minute < 0 || time->minute > 59)
@@ -46,8 +52,11 @@ void SegmentDriver::FillRegister()
 
     for (size_t i = 0; i < 7; i++)
     {
-        
-        CHECK_ERROR(gpio_set_level(SER, ~(digit >> i) & 1));
+        if(digitCount == digitToBlink && showBlinkDigit){
+            CHECK_ERROR(gpio_set_level(SER, 1));
+        } else {
+            CHECK_ERROR(gpio_set_level(SER, ~(digit >> i) & 1));
+        }
         CHECK_ERROR(gpio_set_level(SRCLK, 1));
         CHECK_ERROR(gpio_set_level(SRCLK, 0));
     }
@@ -168,6 +177,14 @@ void SegmentDriver::InitTimer()
         .name = "Blink",
         .skip_unhandled_events = true };
     CHECK_ERROR(esp_timer_create(&blinkTimerArgs, &blinkTimerHandle));
+ 
+    esp_timer_create_args_t blinkDigitTimerArgs = {
+        .callback = &BlinkDigitCallback,
+        .arg = (void*)this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "BlinkDigit",
+        .skip_unhandled_events = true };
+    CHECK_ERROR(esp_timer_create(&blinkDigitTimerArgs, &blinkDigitTimerHandle));
 
     LOG_INFO("Timers started", nullptr);
 }
@@ -205,6 +222,10 @@ void SegmentDriver::ToggleDash(){
     showDash = !showDash;
 }
 
+void SegmentDriver::BlinkDigit(){
+    showBlinkDigit = !showBlinkDigit;
+}
+
 void SegmentDriver::ToggleBlink(){
     showPoints = false;
     bool isRunning = !esp_timer_is_active(blinkTimerHandle);
@@ -230,6 +251,21 @@ void SegmentDriver::ReadyForSleep(){
     CHECK_ERROR(gpio_hold_en(CA3));
     CHECK_ERROR(gpio_hold_en(CA4));
     gpio_deep_sleep_hold_en();
+}
+
+void SegmentDriver::BlinkOnlyDigit(int digit){
+    digitToBlink = digit;
+    bool isRunning = esp_timer_is_active(blinkDigitTimerHandle);
+    LOG_INFO("Blinking started", dynamic_cast<JsonObject*>(new PrimitiveJSON(&isRunning)));
+    if(isRunning == true){
+        return;
+    } 
+    CHECK_ERROR(esp_timer_start_periodic(blinkDigitTimerHandle, 125000));
+}
+
+void SegmentDriver::StopBlinkOnlyDigit(){
+    CHECK_ERROR(esp_timer_stop(blinkDigitTimerHandle));
+    showBlinkDigit = false;
 }
 
 bool SegmentDriver::IsInPanicMode(){

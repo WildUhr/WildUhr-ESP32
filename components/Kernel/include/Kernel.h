@@ -55,6 +55,8 @@ private:
     std::unique_ptr<nvs::NVSHandle> GetHandler();
     void UpdateTime();
     void SatisfyWatchdog();
+    int PositionToSeconds(int possition);
+
 public:
     Kernel(/* args */){};
     ~Kernel(){};

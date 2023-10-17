@@ -118,7 +118,7 @@ void Kernel::RecordingLogic()
     LOG_INFO("Recording Logic", nullptr);
     SaveState(State::WAITING);
     segmentDriver.ReadyForSleep();
-    sleepControl.EnterInactiveMode();
+    sleepControl.SleepWithShakeWeakup();
 }
 
 void Kernel::WaitingLogic()
@@ -134,12 +134,11 @@ void Kernel::WaitingLogic()
 void Kernel::MenuLogic()
 {
     LOG_INFO("Menu Logic", nullptr);
-    time_t time = realTimeClock.GetTime();
     ButtonControl::Button button = ButtonControl::Button::NONE;
-
+    int position = 3;
+    segmentDriver.BlinkOnlyDigit(position);
     while (true)
     {    
-        time = realTimeClock.GetTime();
         button = buttonControl.TryPop();
         if (!buttonControl.AllButtonsReleased())
         {
@@ -150,24 +149,29 @@ void Kernel::MenuLogic()
         {
         case ButtonControl::Button::ACTION:
             LOG_DEBUG("ACTION", nullptr);
-            state = State::READY;
-            segmentDriver.ToggleBlink();
-            return;
+            position--;
+            segmentDriver.BlinkOnlyDigit(position);
+            break;
         case ButtonControl::Button::UP:
             LOG_DEBUG("UP", nullptr);
-            time += 60;
+            realTimeClock.AddOne(position);
             break;
         case ButtonControl::Button::DOWN:
             LOG_DEBUG("DOWN", nullptr);
-            time -= 60;
+            realTimeClock.SubtractOne(position);
             break;
         case ButtonControl::Button::NONE:
         default:
-
             break;
         }
-        realTimeClock.SetTime(time);
+
         UpdateTime();
+        if (position < 0)
+        {
+            segmentDriver.ToggleBlink();
+            state = State::READY;
+            return;
+        }
     }
 }
 

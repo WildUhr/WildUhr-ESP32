@@ -17,6 +17,7 @@ class RealTimeClock
 {
 private:
     bool panic = false;
+    void SetTime(time_t time);
 public:
 public:
     RealTimeClock(/* args */){};
@@ -25,7 +26,9 @@ public:
     void Init();
     bool IsInPanicMode();
     time_t GetTime();
-    void SetTime(time_t time);
+    void AddOne(int position);
+    void SubtractOne(int position);
+
 };
 
 #endif

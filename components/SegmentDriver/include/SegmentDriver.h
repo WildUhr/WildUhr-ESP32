@@ -42,10 +42,13 @@ private:
     DisplayTime time = { 0, 0 };
     esp_timer_handle_t cycleDigitsTimerHandle;
     esp_timer_handle_t blinkTimerHandle;
+    esp_timer_handle_t blinkDigitTimerHandle;
 
     int digitCount = 0;
     int testDigit = -1;
+    int digitToBlink = 0;
     bool showPoints = false;
+    bool showBlinkDigit = false;
     bool showDash = false;
     bool panic = false;
 public:
@@ -69,6 +72,9 @@ public:
     void ToggleDash();
     bool IsInPanicMode();
     void ReadyForSleep();
+    void BlinkOnlyDigit(int digit);
+    void BlinkDigit();
+    void StopBlinkOnlyDigit();  
 };
 
 #endif
