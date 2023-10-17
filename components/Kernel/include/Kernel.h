@@ -29,7 +29,6 @@ public:
         RECORDING,
         WAITING,
         MENU,
-        SLEEP,
         PANIC,
     };
 private:
@@ -38,8 +37,14 @@ private:
     ButtonControl buttonControl;
     RealTimeClock realTimeClock;
     SleepControl sleepControl; 
-    DisplayTime recordedTime = { 0, 0 };
+    esp_timer_handle_t inactiveTimerHandle;
     bool panic = false;
+
+    enum SleepReason
+    {
+        PLANNED,
+        INACTIVE,
+    };
 private:
     void ShutdownLogic();
     void BootingLogic();
@@ -48,7 +53,6 @@ private:
     void RecordingLogic();
     void WaitingLogic();
     void MenuLogic();
-    void SleepLogic();
     void PanicLogic();
     void SaveState(State saveState);
     State RecoverState();
@@ -56,13 +60,17 @@ private:
     void UpdateTime();
     void SatisfyWatchdog();
     int PositionToSeconds(int possition);
-
+    void InitInactiveTimer();
+    void ResetInactiveTimer();
+    void SaveWaitingTime(time_t saveTime);
+    time_t ReadWaitingTime();
+    
 public:
     Kernel(/* args */){};
     ~Kernel(){};
 
     void entrypoint();
-    State getState();
+    void GoToSleep(SleepReason reason);
 };
 
 #endif

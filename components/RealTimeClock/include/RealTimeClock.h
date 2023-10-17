@@ -28,7 +28,6 @@ public:
     time_t GetTime();
     void AddOne(int position);
     void SubtractOne(int position);
-
 };
 
 #endif

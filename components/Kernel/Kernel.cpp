@@ -28,9 +28,6 @@ void Kernel::entrypoint()
             break;
         case State::MENU:
             MenuLogic();
-            break;  
-        case State::SLEEP:
-            SleepLogic();
             break;
         case State::PANIC:
             PanicLogic();
@@ -68,20 +65,29 @@ void Kernel::BootingLogic()
     }
 
     UpdateTime();
+
+    InitInactiveTimer();
+
     LOG_INFO("BOOT FINISHED", nullptr);
 }
 
 void Kernel::ReadyLogic()
 {    
     LOG_INFO("ReadyLogic", nullptr);
-
+    auto button = ButtonControl::Button::NONE;
     while (!buttonControl.AllButtonsPressed()){
         UpdateTime();
         SatisfyWatchdog();
+        button = buttonControl.TryPop();
+        if (button != ButtonControl::Button::NONE)
+        {
+            ResetInactiveTimer();
+        }
     }
     buttonControl.ClearQueue();
+    button = buttonControl.TryPop(2000);
 
-    auto button = buttonControl.TryPop(2000);
+    ResetInactiveTimer();
     if (button == ButtonControl::Button::NONE)
     {
         state = State::MENU; 
@@ -110,24 +116,45 @@ void Kernel::ArmedLogic()
     if(button != ButtonControl::Button::NONE)
     {
         state = State::READY;
+        ResetInactiveTimer();
     }
 }
 
 void Kernel::RecordingLogic()
 {
     LOG_INFO("Recording Logic", nullptr);
-    SaveState(State::WAITING);
-    segmentDriver.ReadyForSleep();
-    sleepControl.SleepWithShakeWeakup();
+    ResetInactiveTimer();
+    SaveWaitingTime(0);
+
+    GoToSleep(SleepReason::PLANNED);    
 }
 
 void Kernel::WaitingLogic()
 {
     LOG_INFO("Waiting...", nullptr);
+    time_t time = ReadWaitingTime();
+    if (time == 0)
+    {
+        SaveWaitingTime(realTimeClock.GetTime());
+        time = realTimeClock.GetTime();
+    }
+    DisplayTime dTime = {
+        .hour = (int)((time / 3600) % 24),
+        .minute = (int)((time / 60) % 60),
+    };
+    segmentDriver.UpdateTime(&dTime);
+    while (!buttonControl.AllButtonsReleased())
+    {
+        buttonControl.TryPop(10);
+    }
+    buttonControl.ClearQueue();
+    
     ButtonControl::Button button = ButtonControl::Button::NONE;
+    ResetInactiveTimer();
     while (button == ButtonControl::Button::NONE){
         button = buttonControl.TryPop();
     }
+    SaveWaitingTime(0);
     state = State::READY;
 }
 
@@ -151,14 +178,17 @@ void Kernel::MenuLogic()
             LOG_DEBUG("ACTION", nullptr);
             position--;
             segmentDriver.BlinkOnlyDigit(position);
+            ResetInactiveTimer();
             break;
         case ButtonControl::Button::UP:
             LOG_DEBUG("UP", nullptr);
             realTimeClock.AddOne(position);
+            ResetInactiveTimer();
             break;
         case ButtonControl::Button::DOWN:
             LOG_DEBUG("DOWN", nullptr);
             realTimeClock.SubtractOne(position);
+            ResetInactiveTimer();
             break;
         case ButtonControl::Button::NONE:
         default:
@@ -173,11 +203,6 @@ void Kernel::MenuLogic()
             return;
         }
     }
-}
-
-void Kernel::SleepLogic()
-{
-    LOG_INFO("SleepLogic", nullptr);
 }
 
 void Kernel::PanicLogic()
@@ -216,6 +241,22 @@ void Kernel::SaveState(State saveState)
     CHECK_ERROR(handle->commit());
 }
 
+void Kernel::SaveWaitingTime(time_t saveTime)
+{
+    auto handle = GetHandler();
+    
+    CHECK_ERROR(handle->set_item("waitingTime", saveTime));
+    CHECK_ERROR(handle->commit());
+}
+
+time_t Kernel::ReadWaitingTime()
+{
+    auto handle = GetHandler();
+    time_t nvsTime = 0;
+    CHECK_ERROR(handle->get_item("waitingTime", nvsTime));
+    return nvsTime;
+}
+
 Kernel::State Kernel::RecoverState()
 {
     auto handle = GetHandler();
@@ -247,11 +288,6 @@ std::unique_ptr<nvs::NVSHandle> Kernel::GetHandler()
     return nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
 }
 
-Kernel::State Kernel::getState()
-{
-    return state;
-}
-
 void Kernel::UpdateTime()
 {
     auto time = realTimeClock.GetTime();
@@ -260,6 +296,42 @@ void Kernel::UpdateTime()
         .minute = (int)((time / 60) % 60),
     };
     segmentDriver.UpdateTime(&dTime);
+}
+
+void Kernel::GoToSleep(SleepReason reason)
+{
+    segmentDriver.ReadyForSleep();
+    switch (reason)
+    {
+    case SleepReason::PLANNED:
+        SaveState(State::WAITING);
+        sleepControl.SleepWithShakeWeakup();
+        break;
+    case SleepReason::INACTIVE:
+        SaveState(state);
+        sleepControl.SleepWithButtonWeakup();
+        break;    
+    default:
+        break;
+    }
+}
+
+void Kernel::InitInactiveTimer(){
+    esp_timer_create_args_t inactiveTimerArgs;
+    inactiveTimerArgs.callback = [](void* arg){
+        Kernel* kernel = (Kernel*)arg;
+        kernel->GoToSleep(SleepReason::INACTIVE);
+    };
+    inactiveTimerArgs.arg = this;
+    inactiveTimerArgs.dispatch_method = ESP_TIMER_TASK;
+    inactiveTimerArgs.name = "InactiveTimer";
+    esp_timer_create(&inactiveTimerArgs, &inactiveTimerHandle);
+    esp_timer_start_periodic(inactiveTimerHandle, 60000000);
+}
+
+void Kernel::ResetInactiveTimer(){
+    esp_timer_stop(inactiveTimerHandle);
+    esp_timer_start_periodic(inactiveTimerHandle, 60000000);
 }
 
 void Kernel::SatisfyWatchdog()
