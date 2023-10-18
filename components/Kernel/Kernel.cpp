@@ -148,6 +148,7 @@ void Kernel::WaitingLogic()
         buttonControl.TryPop(10);
     }
     buttonControl.ClearQueue();
+    LOG_INFO("Waiting for button press", nullptr);
     
     ButtonControl::Button button = ButtonControl::Button::NONE;
     ResetInactiveTimer();

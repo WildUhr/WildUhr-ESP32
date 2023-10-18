@@ -74,7 +74,7 @@ void ButtonControl::InitTimer(){
         .skip_unhandled_events = true };
     CHECK_ERROR(esp_timer_create(&calibrateTimerArgs, &calibrateTimerHandle));
 
-    CHECK_ERROR(esp_timer_start_periodic(calibrateTimerHandle, 5000000));
+    CHECK_ERROR(esp_timer_start_periodic(calibrateTimerHandle, 10000));
 }
 
 void ButtonControl::ClearQueue(){
